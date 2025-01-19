@@ -17,7 +17,7 @@ class AlegraService
         
         // Alegra usa Basic Auth con email:token
         $this->auth = base64_encode(
-            config('alegra.api_key') . ':' . config('alegra.api_token')
+            config('alegra.user') . ':' . config('alegra.token')
         );
         
         $this->http = Http::withHeaders([
