@@ -281,21 +281,23 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
                             <div class="modal-body">
-                                <p>¿Está seguro de realizar esta venta?</p>
-                                <div class="alert alert-info">
-                                    <strong>Total a cobrar: $<span id="modal-total">0.00</span></strong>
+                                <div class="form-group mb-3">
+                                    <label>Total a Pagar:</label>
+                                    <input type="text" class="form-control" id="totalAPagar" readonly>
                                 </div>
-                                <div id="stock-warnings" class="alert alert-warning d-none">
-                                    <strong>Advertencias de Stock:</strong>
-                                    <ul class="mb-0"></ul>
+                                <div class="form-group mb-3">
+                                    <label>Paga con:</label>
+                                    <input type="number" class="form-control" id="pagaCon">
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label>Devuelta:</label>
+                                    <input type="text" class="form-control" id="devuelta" readonly>
                                 </div>
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                    <i class="fas fa-times"></i> Cancelar
-                                </button>
-                                <button type="button" class="btn btn-primary" id="btn-confirmar-venta">
-                                    <i class="fas fa-check"></i> Confirmar Venta
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="button" class="btn btn-primary" id="btnConfirmarVenta">
+                                    Confirmar e Imprimir
                                 </button>
                             </div>
                         </div>
@@ -368,17 +370,7 @@ $(document).ready(function() {
         // F12 - Guardar Venta
         if (e.which === 123) {
             e.preventDefault();
-            if (productos.length > 0) {
-                mostrarModalConfirmacion();
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Debe agregar al menos un producto a la venta',
-                    confirmButtonColor: '#3085d6',
-                    confirmButtonText: 'OK'
-                });
-            }
+            mostrarModalConfirmacion();
         }
     });
     // Evento para guardar estado antes de ir a crear nuevo producto
@@ -537,7 +529,9 @@ $(document).ready(function() {
 
         productos.forEach((producto, index) => {
             const subtotal = producto.cantidad * producto.precio;
-            const iva = subtotal * 0.19 / 1.19;
+            const iva = Math.round(subtotal * 0.19);
+            const subtotal_sin_iva = subtotal - iva;
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${producto.codigo}</td>
@@ -553,7 +547,7 @@ $(document).ready(function() {
                 </td>
                 <td class="text-end">${producto.precio.toLocaleString()}</td>
                 <td class="text-end">${iva.toLocaleString()}</td>
-                <td class="text-end">${subtotal.toLocaleString()}</td>
+                <td class="text-end">${subtotal_sin_iva.toLocaleString()}</td>
                 <td class="text-center">
                     <button type="button" class="btn btn-danger btn-sm" onclick="eliminarProducto(${index})">
                         <i class="fas fa-trash"></i>
@@ -606,24 +600,28 @@ $(document).ready(function() {
 
     function calcularTotales() {
         let total = 0;
-        let iva_total = 0;
-
+        
         productos.forEach(producto => {
-            const subtotal = producto.cantidad * producto.precio;
-            total += subtotal;
-            iva_total += subtotal * 0.19 / 1.19;
+            total += producto.cantidad * producto.precio;
         });
 
-        const subtotal = total - iva_total;
+        const iva = Math.round(total * 0.19);
+        const subtotal = total - iva;
 
-        document.getElementById('subtotal-display').textContent = subtotal.toLocaleString();
-        document.getElementById('iva-display').textContent = iva_total.toLocaleString();
-        document.getElementById('total-display').textContent = total.toLocaleString();
-        document.getElementById('modal-total').textContent = total.toLocaleString();
+        // Actualizar displays
+        $('#subtotal-display').text(subtotal.toLocaleString());
+        $('#iva-display').text(iva.toLocaleString());
+        $('#total-display').text(total.toLocaleString());
 
-        document.querySelector('input[name="subtotal"]').value = subtotal.toFixed(2);
-        document.querySelector('input[name="iva"]').value = iva_total.toFixed(2);
-        document.querySelector('input[name="total"]').value = total.toFixed(2);
+        // Actualizar campos ocultos
+        $('input[name="subtotal"]').val(subtotal);
+        $('input[name="iva"]').val(iva);
+        $('input[name="total"]').val(total);
+        
+        // Actualizar total en modal si existe
+        if($('#totalAPagar').length) {
+            $('#totalAPagar').val(total);
+        }
     }
 
     // Validación del formulario
@@ -655,13 +653,95 @@ $(document).ready(function() {
         mostrarModalConfirmacion();
     });
     function mostrarModalConfirmacion() {
-        const modal = new bootstrap.Modal(document.getElementById('confirmacionModal'));
-        modal.show();
-    }
+        if (productos.length === 0) {
+            Swal.fire('Error', 'Debe agregar productos a la venta', 'error');
+            return;
+        }
 
-    document.getElementById('btn-confirmar-venta').addEventListener('click', function() {
-        document.getElementById('ventaForm').submit();
-    });
+        // Obtener el total y limpiarlo de formato
+        const total = $('#total-display').text()
+            .replace('$', '')
+            .replace(/,/g, '')
+            .trim();
+        
+        // Actualizar campos del modal
+        $('#totalAPagar').val(total);
+        $('#pagaCon').val('');
+        $('#devuelta').val('');
+        
+        // Mostrar modal
+        $('#confirmacionModal').modal('show');
+        
+        // Asignar evento al campo pagaCon
+        $('#pagaCon').off('input').on('input', function() {
+            const totalPagar = parseInt($('#totalAPagar').val().replace(/[$.]/g, '').replace(/,/g, '')) || 0;
+            const pagaCon = parseInt($(this).val()) || 0;
+            
+            console.log('Total a pagar:', totalPagar);
+            console.log('Paga con:', pagaCon);
+            
+            const devuelta = pagaCon - totalPagar;
+            
+            console.log('Devuelta:', devuelta);
+            
+            if (devuelta >= 0) {
+                $('#devuelta').val(devuelta.toLocaleString('es-CO'));
+            } else {
+                $('#devuelta').val('0');
+            }
+            
+            $('#btnConfirmarVenta').prop('disabled', pagaCon < totalPagar);
+        });
+
+        // Agregar evento al botón confirmar
+        $('#btnConfirmarVenta').off('click').on('click', function() {
+            const form = $('#ventaForm');
+            
+            // Obtener valores limpios
+            const pago = parseInt($('#pagaCon').val()) || 0;
+            const devuelta = parseInt($('#devuelta').val().replace(/[$.]/g, '').replace(/,/g, '')) || 0;
+            
+            // Remover campos anteriores
+            form.find('input[name="pago"]').remove();
+            form.find('input[name="devuelta"]').remove();
+            
+            // Agregar campos con valores limpios
+            form.append(`<input type="hidden" name="pago" value="${pago}">`);
+            form.append(`<input type="hidden" name="devuelta" value="${devuelta}">`);
+            
+            console.log('Enviando:', { pago, devuelta });
+            
+            // Enviar formulario con AJAX
+            $.ajax({
+                url: form.attr('action'),
+                method: 'POST',
+                data: form.serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Éxito',
+                            text: response.message,
+                            showCancelButton: true,
+                            confirmButtonText: 'Imprimir',
+                            cancelButtonText: 'Cerrar'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.open(response.print_url, '_blank');
+                            }
+                            // Redireccionar a nueva venta
+                            window.location.href = '/laravel/ventas_completa/public/ventas/create';
+                        });
+                    } else {
+                        Swal.fire('Error', response.message, 'error');
+                    }
+                },
+                error: function(xhr) {
+                    Swal.fire('Error', 'Hubo un error al procesar la venta', 'error');
+                }
+            });
+        });
+    }
 
     // Mantener el foco en el input de búsqueda
     $('#productosModal').on('shown.bs.modal', function () {
@@ -789,23 +869,22 @@ function actualizarListaVentas() {
     $('#ventas-guardadas-list').html(lista || '<p class="text-center">No hay ventas guardadas</p>');
 }
 
-// También debemos agregar los atajos de teclado F1 y F2
-$(document).on('keydown', function(e) {
-    // F1 - Guardar Venta Temporal
-    if (e.which === 112) {
-        e.preventDefault();
-        guardarVentaTemp();
-    }
-    
-    // F2 - Ver Ventas Guardadas
-    if (e.which === 113) {
-        e.preventDefault();
-        $('.dropdown-toggle[data-bs-toggle="dropdown"]').dropdown('toggle');
-    }
+// Mantener el foco en el input de búsqueda
+$('#productosModal').on('shown.bs.modal', function () {
+    $('#modal-busqueda').focus();
 });
 
-// Inicializar lista de ventas guardadas
-actualizarListaVentas();
+$('#productosModal').on('hidden.bs.modal', function () {
+    $('#busqueda-producto').focus();
+});
+
+// Prevenir envío del formulario al presionar Enter
+$('#ventaForm').on('keypress', function(e) {
+    if (e.which === 13) {
+        e.preventDefault();
+        return false;
+    }
+});
 });
 </script>
 @endpush
