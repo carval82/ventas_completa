@@ -1,0 +1,21 @@
+.sidebar-header {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.app-title {
+    color: white;
+    text-align: center;
+}
+
+.app-title h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.app-title p {
+    font-size: 0.9rem;
+    opacity: 0.8;
+} 
