@@ -387,6 +387,14 @@
                             </ul>
                         </div>
                     </li>
+
+                    <!-- Módulo de Créditos -->
+                    <li class="nav-item">
+                        <a href="{{ route('creditos.index') }}" class="nav-link {{ request()->routeIs('creditos.*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-credit-card"></i>
+                            <p>Créditos</p>
+                        </a>
+                    </li>
                 </ul>
             </div>
         </nav>

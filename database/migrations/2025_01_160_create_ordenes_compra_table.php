@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up()
     {
+        // Ya no creamos sugeridos_compra aquí, asumimos que ya existe
         Schema::create('ordenes_compra', function (Blueprint $table) {
             $table->id();
             $table->string('numero_orden')->unique();
@@ -18,18 +19,18 @@ return new class extends Migration
                   ->default('pendiente');
             $table->decimal('total', 12, 2)->default(0);
             $table->text('observaciones')->nullable();
-            $table->foreignId('user_id')->constrained('users'); // Usuario que genera la orden
+            $table->foreignId('user_id')->constrained('users');
             $table->timestamps();
         });
 
         Schema::create('orden_compra_detalles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('orden_compra_id')->constrained('ordenes_compra')->onDelete('cascade');
+            $table->foreignId('sugerido_compra_id')->constrained('sugeridos_compra')->onDelete('cascade');
             $table->foreignId('producto_id')->constrained('productos');
             $table->integer('cantidad');
             $table->decimal('precio_unitario', 10, 2);
             $table->decimal('subtotal', 12, 2);
-            $table->foreignId('sugerido_compra_id')->nullable()->constrained('sugeridos_compra');
             $table->timestamps();
         });
     }

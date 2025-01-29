@@ -20,6 +20,9 @@ use App\Http\Controllers\Contabilidad\ComprobanteController;
 use App\Http\Controllers\Contabilidad\ReporteContableController;
 use App\Http\Controllers\SugeridoCompraController;
 use App\Http\Controllers\OrdenCompraController;
+use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\TurnoController;
+use App\Http\Controllers\CreditoController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 // Rutas de Autenticación
@@ -124,25 +127,25 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Rutas de Contabilidad
-Route::middleware(['auth'])->prefix('contabilidad')->group(function () {
-    // Plan de Cuentas
-    Route::resource('plan-cuentas', PlanCuentaController::class);
-    
-    // Comprobantes
-    Route::resource('comprobantes', ComprobanteController::class);
-    Route::post('comprobantes/{comprobante}/aprobar', [ComprobanteController::class, 'aprobar'])->name('comprobantes.aprobar');
-    Route::post('comprobantes/{comprobante}/anular', [ComprobanteController::class, 'anular'])->name('comprobantes.anular');
-    Route::get('comprobantes/{comprobante}/imprimir', [ComprobanteController::class, 'imprimir'])->name('comprobantes.imprimir');
+    Route::middleware(['auth'])->prefix('contabilidad')->group(function () {
+        // Plan de Cuentas
+        Route::resource('plan-cuentas', PlanCuentaController::class);
+        
+        // Comprobantes
+        Route::resource('comprobantes', ComprobanteController::class);
+        Route::post('comprobantes/{comprobante}/aprobar', [ComprobanteController::class, 'aprobar'])->name('comprobantes.aprobar');
+        Route::post('comprobantes/{comprobante}/anular', [ComprobanteController::class, 'anular'])->name('comprobantes.anular');
+        Route::get('comprobantes/{comprobante}/imprimir', [ComprobanteController::class, 'imprimir'])->name('comprobantes.imprimir');
 
-    // Reportes
-    Route::get('reportes', [ReporteContableController::class, 'index'])->name('reportes.index');
-    Route::get('reportes/balance-general', [ReporteContableController::class, 'balance_general'])->name('reportes.balance-general');
-    Route::get('reportes/estado-resultados', [ReporteContableController::class, 'estado_resultados'])->name('reportes.estado-resultados');
-    Route::get('reportes/libro-diario', [ReporteContableController::class, 'libro_diario'])->name('reportes.libro-diario');
-    Route::get('reportes/libro-mayor', [ReporteContableController::class, 'libro_mayor'])->name('reportes.libro-mayor');
-});
+        // Reportes
+        Route::get('reportes', [ReporteContableController::class, 'index'])->name('reportes.index');
+        Route::get('reportes/balance-general', [ReporteContableController::class, 'balance_general'])->name('reportes.balance-general');
+        Route::get('reportes/estado-resultados', [ReporteContableController::class, 'estado_resultados'])->name('reportes.estado-resultados');
+        Route::get('reportes/libro-diario', [ReporteContableController::class, 'libro_diario'])->name('reportes.libro-diario');
+        Route::get('reportes/libro-mayor', [ReporteContableController::class, 'libro_mayor'])->name('reportes.libro-mayor');
+    });
 
-Route::get('/productos/{id}/barcode', [ProductoController::class, 'imprimirCodigoBarras'])->name('productos.barcode');
+    Route::get('/productos/{id}/barcode', [ProductoController::class, 'imprimirCodigoBarras'])->name('productos.barcode');
 
     // Sugeridos y Órdenes de Compra
     Route::prefix('sugeridos')->group(function () {
@@ -172,6 +175,23 @@ Route::get('/productos/{id}/barcode', [ProductoController::class, 'imprimirCodig
 
     Route::get('/sugeridos/generar-orden', [SugeridoCompraController::class, 'generarOrden'])
         ->name('sugeridos.generar-orden');
+
+    // Rutas de reportes
+    Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
+    Route::get('/reportes/generar', [ReporteController::class, 'generarReporte'])->name('reportes.generar');
+    Route::get('/reportes/cuadre-caja', [ReporteController::class, 'cuadreCaja'])->name('reportes.cuadre_caja');
+    Route::get('/reportes/imprimir-facturas', [ReporteController::class, 'imprimirFacturas'])->name('reportes.imprimir_facturas');
+    Route::get('/reportes/imprimir-productos', [ReporteController::class, 'imprimirProductos'])->name('reportes.imprimir_productos');
+    
+    // Rutas de turnos
+    Route::resource('turnos', TurnoController::class);
+
+    // Rutas de créditos
+    Route::get('/creditos', [CreditoController::class, 'index'])
+        ->middleware('auth')
+        ->name('creditos.index');
+    Route::get('/creditos/{credito}', [CreditoController::class, 'show'])->name('creditos.show');
+    Route::post('/creditos/{credito}/pago', [CreditoController::class, 'registrarPago'])->name('creditos.pago');
 });
 
 // Productos API

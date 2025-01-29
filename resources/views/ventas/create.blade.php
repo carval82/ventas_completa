@@ -282,16 +282,35 @@
                             </div>
                             <div class="modal-body">
                                 <div class="form-group mb-3">
-                                    <label>Total a Pagar:</label>
-                                    <input type="text" class="form-control" id="totalAPagar" readonly>
+                                    <label>Método de Pago:</label>
+                                    <select class="form-control" id="metodoPago">
+                                        <option value="efectivo">Efectivo</option>
+                                        <option value="credito">Crédito</option>
+                                    </select>
                                 </div>
-                                <div class="form-group mb-3">
-                                    <label>Paga con:</label>
-                                    <input type="number" class="form-control" id="pagaCon">
+
+                                <!-- Campos para pago en efectivo -->
+                                <div id="pagoEfectivo">
+                                    <div class="form-group mb-3">
+                                        <label>Total a Pagar:</label>
+                                        <input type="text" class="form-control" id="totalAPagar" readonly>
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label>Paga con:</label>
+                                        <input type="number" class="form-control" id="pagaCon">
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label>Devuelta:</label>
+                                        <input type="text" class="form-control" id="devuelta" readonly>
+                                    </div>
                                 </div>
-                                <div class="form-group mb-3">
-                                    <label>Devuelta:</label>
-                                    <input type="text" class="form-control" id="devuelta" readonly>
+
+                                <!-- Campos para crédito -->
+                                <div id="pagoCredito" style="display: none;">
+                                    <div class="form-group mb-3">
+                                        <label>Días de Crédito:</label>
+                                        <input type="number" class="form-control" id="diasCredito" min="1">
+                                    </div>
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -674,22 +693,11 @@ $(document).ready(function() {
         
         // Asignar evento al campo pagaCon
         $('#pagaCon').off('input').on('input', function() {
-            const totalPagar = parseInt($('#totalAPagar').val().replace(/[$.]/g, '').replace(/,/g, '')) || 0;
-            const pagaCon = parseInt($(this).val()) || 0;
-            
-            console.log('Total a pagar:', totalPagar);
-            console.log('Paga con:', pagaCon);
-            
+            const totalPagar = parseFloat($('#totalAPagar').val().replace(/[$.]/g, '').replace(/,/g, '')) || 0;
+            const pagaCon = parseFloat($(this).val()) || 0;
             const devuelta = pagaCon - totalPagar;
             
-            console.log('Devuelta:', devuelta);
-            
-            if (devuelta >= 0) {
-                $('#devuelta').val(devuelta.toLocaleString('es-CO'));
-            } else {
-                $('#devuelta').val('0');
-            }
-            
+            $('#devuelta').val(devuelta >= 0 ? devuelta.toLocaleString('es-CO') : '0');
             $('#btnConfirmarVenta').prop('disabled', pagaCon < totalPagar);
         });
 
@@ -697,19 +705,31 @@ $(document).ready(function() {
         $('#btnConfirmarVenta').off('click').on('click', function() {
             const form = $('#ventaForm');
             
-            // Obtener valores limpios
-            const pago = parseInt($('#pagaCon').val()) || 0;
-            const devuelta = parseInt($('#devuelta').val().replace(/[$.]/g, '').replace(/,/g, '')) || 0;
-            
-            // Remover campos anteriores
-            form.find('input[name="pago"]').remove();
-            form.find('input[name="devuelta"]').remove();
-            
-            // Agregar campos con valores limpios
-            form.append(`<input type="hidden" name="pago" value="${pago}">`);
-            form.append(`<input type="hidden" name="devuelta" value="${devuelta}">`);
-            
-            console.log('Enviando:', { pago, devuelta });
+            // Obtener valores según el método de pago
+            const metodoPago = $('#metodoPago').val();
+            if (metodoPago === 'efectivo') {
+                const pago = parseFloat($('#pagaCon').val()) || 0;
+                const devuelta = parseFloat($('#devuelta').val().replace(/[$.]/g, '').replace(/,/g, '')) || 0;
+                
+                form.find('input[name="pago"]').remove();
+                form.find('input[name="devuelta"]').remove();
+                form.append(`<input type="hidden" name="pago" value="${pago}">`);
+                form.append(`<input type="hidden" name="devuelta" value="${devuelta}">`);
+            } else {
+                const diasCredito = $('#diasCredito').val();
+                if (!diasCredito) {
+                    Swal.fire('Error', 'Debe especificar los días de crédito', 'error');
+                    return;
+                }
+                form.append(`<input type="hidden" name="dias_credito" value="${diasCredito}">`);
+            }
+
+            // Agregar método de pago al formulario
+            form.find('input[name="metodo_pago"]').remove();
+            form.append(`<input type="hidden" name="metodo_pago" value="${metodoPago}">`);
+
+            // Cerrar modal y enviar
+            $('#confirmacionModal').modal('hide');
             
             // Enviar formulario con AJAX
             $.ajax({
@@ -717,27 +737,63 @@ $(document).ready(function() {
                 method: 'POST',
                 data: form.serialize(),
                 success: function(response) {
-                    if (response.success) {
+                    console.log('Respuesta completa:', response); // Debug
+
+                    try {
+                        if (typeof response === 'string') {
+                            response = JSON.parse(response);
+                        }
+
+                        console.log('URLs:', {
+                            print: response.print_url,
+                            redirect: response.redirect_url
+                        }); // Debug
+
                         Swal.fire({
                             icon: 'success',
-                            title: 'Éxito',
-                            text: response.message,
+                            title: 'Venta Realizada',
+                            text: 'La venta se ha registrado correctamente',
                             showCancelButton: true,
-                            confirmButtonText: 'Imprimir',
-                            cancelButtonText: 'Cerrar'
+                            confirmButtonText: 'Imprimir Factura',
+                            cancelButtonText: 'Nueva Venta',
+                            allowOutsideClick: false
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                window.open(response.print_url, '_blank');
+                                const printWindow = window.open(response.print_url, '_blank');
+                                if (!printWindow) {
+                                    console.error('Bloqueador de popups detectado');
+                                    alert('Por favor, permita las ventanas emergentes para imprimir');
+                                }
                             }
-                            // Redireccionar a nueva venta
-                            window.location.href = '/laravel/ventas_completa/public/ventas/create';
+                            
+                            // Pequeño delay antes de redireccionar
+                            setTimeout(() => {
+                                window.location.href = response.redirect_url;
+                            }, 1000);
                         });
-                    } else {
-                        Swal.fire('Error', response.message, 'error');
+                    } catch (e) {
+                        console.error('Error al procesar respuesta:', e, response);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Error al procesar la respuesta del servidor'
+                        });
                     }
                 },
                 error: function(xhr) {
-                    Swal.fire('Error', 'Hubo un error al procesar la venta', 'error');
+                    console.error('Error completo:', xhr);
+                    let errorMessage = 'Hubo un error al procesar la venta';
+                    
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        errorMessage = errorResponse.message || errorMessage;
+                    } catch (e) {}
+                    
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorMessage
+                    });
                 }
             });
         });
@@ -884,6 +940,119 @@ $('#ventaForm').on('keypress', function(e) {
         e.preventDefault();
         return false;
     }
+});
+
+// Agregar el evento change al select de método de pago
+$('#metodoPago').on('change', function() {
+    const metodo = $(this).val();
+    if (metodo === 'efectivo') {
+        $('#pagoEfectivo').show();
+        $('#pagoCredito').hide();
+        // Reactivar validación de pago completo
+        $('#pagaCon').trigger('input');
+    } else {
+        $('#pagoEfectivo').hide();
+        $('#pagoCredito').show();
+        // Desactivar validación de pago completo para créditos
+        $('#btnConfirmarVenta').prop('disabled', false);
+    }
+});
+
+// Modificar el evento click del botón confirmar
+$('#btnConfirmarVenta').off('click').on('click', function() {
+    const form = $('#ventaForm');
+    const metodoPago = $('#metodoPago').val();
+    
+    // Obtener valores según el método de pago
+    if (metodoPago === 'efectivo') {
+        const pago = parseFloat($('#pagaCon').val()) || 0;
+        const devuelta = parseFloat($('#devuelta').val().replace(/[$.]/g, '').replace(/,/g, '')) || 0;
+        
+        form.find('input[name="pago"]').remove();
+        form.find('input[name="devuelta"]').remove();
+        form.append(`<input type="hidden" name="pago" value="${pago}">`);
+        form.append(`<input type="hidden" name="devuelta" value="${devuelta}">`);
+    } else {
+        const diasCredito = $('#diasCredito').val();
+        if (!diasCredito) {
+            Swal.fire('Error', 'Debe especificar los días de crédito', 'error');
+            return;
+        }
+        form.append(`<input type="hidden" name="dias_credito" value="${diasCredito}">`);
+    }
+
+    // Agregar método de pago al formulario
+    form.find('input[name="metodo_pago"]').remove();
+    form.append(`<input type="hidden" name="metodo_pago" value="${metodoPago}">`);
+
+    // Cerrar modal y enviar
+    $('#confirmacionModal').modal('hide');
+    
+    // Enviar formulario con AJAX
+    $.ajax({
+        url: form.attr('action'),
+        method: 'POST',
+        data: form.serialize(),
+        success: function(response) {
+            console.log('Respuesta completa:', response); // Debug
+
+            try {
+                if (typeof response === 'string') {
+                    response = JSON.parse(response);
+                }
+
+                console.log('URLs:', {
+                    print: response.print_url,
+                    redirect: response.redirect_url
+                }); // Debug
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Venta Realizada',
+                    text: 'La venta se ha registrado correctamente',
+                    showCancelButton: true,
+                    confirmButtonText: 'Imprimir Factura',
+                    cancelButtonText: 'Nueva Venta',
+                    allowOutsideClick: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const printWindow = window.open(response.print_url, '_blank');
+                        if (!printWindow) {
+                            console.error('Bloqueador de popups detectado');
+                            alert('Por favor, permita las ventanas emergentes para imprimir');
+                        }
+                    }
+                    
+                    // Pequeño delay antes de redireccionar
+                    setTimeout(() => {
+                        window.location.href = response.redirect_url;
+                    }, 1000);
+                });
+            } catch (e) {
+                console.error('Error al procesar respuesta:', e, response);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al procesar la respuesta del servidor'
+                });
+            }
+        },
+        error: function(xhr) {
+            console.error('Error completo:', xhr);
+            let errorMessage = 'Hubo un error al procesar la venta';
+            
+            try {
+                const errorResponse = JSON.parse(xhr.responseText);
+                errorMessage = errorResponse.message || errorMessage;
+            } catch (e) {}
+            
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: errorMessage
+            });
+        }
+    });
 });
 });
 </script>

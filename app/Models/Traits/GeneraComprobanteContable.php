@@ -8,70 +8,99 @@ use App\Models\ConfiguracionContable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 trait GeneraComprobanteContable 
 {
-   protected function generarComprobanteVenta()
+   public function generarComprobanteVenta()
    {
-       Log::info('Iniciando generación de comprobante de venta', [
-           'venta_id' => $this->id,
-           'total' => $this->total
-       ]);
+       try {
+           Log::info('Iniciando generación de comprobante de venta', [
+               'venta_id' => $this->id,
+               'total' => $this->total
+           ]);
 
-       DB::transaction(function() {
-           try {
-               Log::info('Creando comprobante de venta');
-               $comprobante = Comprobante::create([
-                   'fecha' => $this->fecha_venta,
-                   'tipo' => 'Ingreso', 
-                   'numero' => $this->generarNumeroComprobante(),
-                   'descripcion' => "Venta No. {$this->numero_factura}",
-                   'estado' => 'Aprobado',
-                   'created_by' => Auth::id(),
-                   'total_debito' => $this->total,
-                   'total_credito' => $this->total
-               ]);
+           DB::transaction(function () {
+               try {
+                   Log::info('Creando comprobante de venta');
+                   
+                   // Obtener configuración contable
+                   $config = ConfiguracionContable::first();
+                   if (!$config) {
+                       throw new \Exception('No se ha configurado la contabilidad');
+                   }
 
-               Log::info('Generando movimientos contables - Caja');
-               MovimientoContable::create([
-                   'comprobante_id' => $comprobante->id,
-                   'cuenta_id' => ConfiguracionContable::getCuentaPorConcepto('caja')->id,
-                   'fecha' => $this->fecha_venta,
-                   'descripcion' => "Venta No. {$this->numero_factura}",
-                   'debito' => $this->total,
-                   'credito' => 0
-               ]);
+                   // Generar número de comprobante
+                   $ultimoNumero = Comprobante::where('prefijo', 'V')
+                       ->orderBy('id', 'desc')
+                       ->first();
 
-               Log::info('Generando movimientos contables - Ventas');
-               MovimientoContable::create([
-                   'comprobante_id' => $comprobante->id,
-                   'cuenta_id' => ConfiguracionContable::getCuentaPorConcepto('ventas')->id,
-                   'fecha' => $this->fecha_venta, 
-                   'descripcion' => "Venta No. {$this->numero_factura}",
-                   'debito' => 0,
-                   'credito' => $this->subtotal
-               ]);
+                   $siguienteNumero = str_pad(
+                       ($ultimoNumero ? intval($ultimoNumero->numero) + 1 : 1), 
+                       6, 
+                       '0', 
+                       STR_PAD_LEFT
+                   );
 
-               Log::info('Generando movimientos contables - IVA');
-               MovimientoContable::create([
-                   'comprobante_id' => $comprobante->id,
-                   'cuenta_id' => ConfiguracionContable::getCuentaPorConcepto('iva_ventas')->id,
-                   'fecha' => $this->fecha_venta,
-                   'descripcion' => "IVA Venta No. {$this->numero_factura}", 
-                   'debito' => 0,
-                   'credito' => $this->iva
-               ]);
+                   $comprobante = Comprobante::create([
+                       'fecha' => Carbon::now(),  // Cambia esto
+                       'tipo' => 'Ingreso',
+                       'prefijo' => 'V',
+                       'numero' => $siguienteNumero,
+                       'descripcion' => "Venta No. {$this->numero_factura}",
+                       'estado' => 'Aprobado',
+                       'created_by' => Auth::id(),
+                       'total_debito' => $this->total,
+                       'total_credito' => $this->total
+                   ]);
 
-               Log::info('Comprobante de venta generado exitosamente');
+                   Log::info('Generando movimientos contables - Caja');
+                   MovimientoContable::create([
+                       'comprobante_id' => $comprobante->id,
+                       'cuenta_id' => ConfiguracionContable::getCuentaPorConcepto('caja')->id,
+                       'fecha' => $this->fecha_venta,
+                       'descripcion' => "Venta No. {$this->numero_factura}",
+                       'debito' => $this->total,
+                       'credito' => 0
+                   ]);
 
-           } catch(\Exception $e) {
-               Log::error('Error al generar comprobante de venta', [
-                   'error' => $e->getMessage(),
-                   'trace' => $e->getTraceAsString()
-               ]);
-               throw $e;
-           }
-       });
+                   Log::info('Generando movimientos contables - Ventas');
+                   MovimientoContable::create([
+                       'comprobante_id' => $comprobante->id,
+                       'cuenta_id' => ConfiguracionContable::getCuentaPorConcepto('ventas')->id,
+                       'fecha' => $this->fecha_venta, 
+                       'descripcion' => "Venta No. {$this->numero_factura}",
+                       'debito' => 0,
+                       'credito' => $this->subtotal
+                   ]);
+
+                   Log::info('Generando movimientos contables - IVA');
+                   MovimientoContable::create([
+                       'comprobante_id' => $comprobante->id,
+                       'cuenta_id' => ConfiguracionContable::getCuentaPorConcepto('iva_ventas')->id,
+                       'fecha' => $this->fecha_venta,
+                       'descripcion' => "IVA Venta No. {$this->numero_factura}", 
+                       'debito' => 0,
+                       'credito' => $this->iva
+                   ]);
+
+                   Log::info('Comprobante de venta generado exitosamente');
+
+               } catch(\Exception $e) {
+                   Log::error('Error al generar comprobante de venta', [
+                       'error' => $e->getMessage(),
+                       'trace' => $e->getTraceAsString()
+                   ]);
+                   throw $e;
+               }
+           });
+       } catch (\Exception $e) {
+           Log::error('Error al generar comprobante de venta', [
+               'error' => $e->getMessage(),
+               'trace' => $e->getTraceAsString()
+           ]);
+           throw $e;
+       }
    }
 
    protected function generarNumeroComprobante()

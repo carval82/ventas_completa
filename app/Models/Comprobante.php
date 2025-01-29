@@ -9,14 +9,15 @@ class Comprobante extends Model
     protected $table = 'comprobantes';
 
     protected $fillable = [
-        'numero',
         'fecha',
         'tipo',
+        'prefijo',
+        'numero',
         'descripcion',
         'estado',
+        'created_by',
         'total_debito',
         'total_credito',
-        'created_by',
         'approved_by'
     ];
 

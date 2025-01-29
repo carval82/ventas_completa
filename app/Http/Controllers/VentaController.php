@@ -9,9 +9,11 @@ use App\Models\Producto;
 use App\Models\DetalleVenta;
 use App\Models\StockUbicacion;
 use App\Models\Empresa;
+use App\Models\Credito;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class VentaController extends Controller
@@ -69,6 +71,12 @@ class VentaController extends Controller
 
    public function store(Request $request)
    {
+    Log::info('Request:', [
+        'metodo_pago' => $request->metodo_pago,
+        'dias_credito' => $request->dias_credito,
+        'tipo_dias' => gettype($request->dias_credito)
+    ]);
+
        $request->validate([
            'cliente_id' => 'required|exists:clientes,id',
            'productos' => 'required|array',
@@ -76,19 +84,26 @@ class VentaController extends Controller
            'productos.*.cantidad' => 'required|integer|min:1',
            'subtotal' => 'required|numeric|min:0',
            'iva' => 'required|numeric|min:0',
-           'total' => 'required|numeric|min:0'
+           'total' => 'required|numeric|min:0',
+           'metodo_pago' => 'required|in:efectivo,credito',
+           'dias_credito' => 'required_if:metodo_pago,credito|integer|min:1',
+           'pago' => 'required_if:metodo_pago,efectivo|numeric|min:0',
+           'devuelta' => 'required_if:metodo_pago,efectivo|numeric|min:0'
        ]);
 
        try {
-           DB::transaction(function () use ($request) {
+           $venta = DB::transaction(function () use ($request) {
                $venta = Venta::create([
                    'numero_factura' => 'F' . time(),
-                   'fecha_venta' => now(),
+                  'fecha_venta' => Carbon::now()->format('Y-m-d H:i:s'),
                    'cliente_id' => $request->cliente_id,
                    'user_id' => Auth::id(),
                    'subtotal' => $request->subtotal,
                    'iva' => $request->iva,
-                   'total' => $request->total
+                   'total' => $request->total,
+                   'metodo_pago' => $request->metodo_pago,
+                   'pago' => $request->metodo_pago === 'efectivo' ? $request->pago : 0,
+                   'devuelta' => $request->metodo_pago === 'efectivo' ? $request->devuelta : 0
                ]);
 
                foreach ($request->productos as $item) {
@@ -107,13 +122,39 @@ class VentaController extends Controller
 
                    $producto->decrement('stock', $item['cantidad']);
                }
+
+               if ($request->metodo_pago === 'credito') {
+                // Convertimos los días a entero
+                $diasCredito = (int) $request->dias_credito;
+                
+                Credito::create([
+                    'venta_id' => $venta->id,
+                    'cliente_id' => $request->cliente_id,
+                    'monto_total' => $request->total,
+                    'saldo_pendiente' => $request->total,
+                    // Usamos el valor convertido a entero
+                    'fecha_vencimiento' => now()->addDays($diasCredito),
+                    'estado' => 'pendiente'
+                ]);
+            }
+            
+
+               return $venta;
            });
 
-           return redirect()->route('ventas.index')
-                          ->with('success', 'Venta registrada exitosamente');
+           return response()->json([
+               'success' => true,
+               'message' => 'Venta registrada exitosamente',
+               'venta_id' => $venta->id,
+               'print_url' => asset('ventas/' . $venta->id . '/print'),
+               'redirect_url' => asset('ventas/create')
+           ]);
 
        } catch (\Exception $e) {
-           return back()->with('error', $e->getMessage());
+           return response()->json([
+               'success' => false,
+               'message' => $e->getMessage()
+           ], 422);
        }
    }
 

@@ -12,7 +12,10 @@ class Venta extends Model
     protected $fillable = [
         'numero_factura', 'fecha_venta', 
         'subtotal', 'iva', 'total',
-        'cliente_id', 'user_id'
+        'cliente_id', 'user_id',
+        'pago',
+        'devuelta',
+        'metodo_pago'
     ];
 
     protected $casts = [
@@ -32,6 +35,11 @@ class Venta extends Model
     public function usuario()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function credito()
+    {
+        return $this->hasOne(Credito::class);
     }
 
     protected static function booted()

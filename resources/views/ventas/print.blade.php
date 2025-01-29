@@ -165,6 +165,13 @@
 
         <div class="divider"></div>
 
+        <div class="text-right">
+            <p>EFECTIVO RECIBIDO: ${{ number_format($venta->pago, 2, ',', '.') }}</p>
+            <p><strong>CAMBIO: ${{ number_format($venta->devuelta, 2, ',', '.') }}</strong></p>
+        </div>
+
+        <div class="divider"></div>
+
         <div class="footer">
             <p>¡GRACIAS POR SU COMPRA!</p>
             @if(isset($empresa))
