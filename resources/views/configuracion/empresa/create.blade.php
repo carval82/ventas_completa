@@ -137,23 +137,67 @@
                         </div>
                     </div>
 
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <label class="form-label required">Régimen Tributario</label>
-                            <select class="form-select @error('regimen_tributario') is-invalid @enderror" 
-                                    name="regimen_tributario" 
-                                    required>
-                                <option value="">Seleccione...</option>
-                                <option value="comun" {{ old('regimen_tributario') == 'comun' ? 'selected' : '' }}>
-                                    Régimen Común
-                                </option>
-                                <option value="simplificado" {{ old('regimen_tributario') == 'simplificado' ? 'selected' : '' }}>
-                                    Régimen Simplificado
-                                </option>
-                            </select>
-                            @error('regimen_tributario')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label required">Régimen Tributario</label>
+                        <select name="regimen_tributario" class="form-select @error('regimen_tributario') is-invalid @enderror" required>
+                            <option value="">Seleccione...</option>
+                            <option value="no_responsable_iva" {{ old('regimen_tributario') == 'no_responsable_iva' ? 'selected' : '' }}>
+                                No Responsable de IVA
+                            </option>
+                            <option value="responsable_iva" {{ old('regimen_tributario') == 'responsable_iva' ? 'selected' : '' }}>
+                                Responsable de IVA
+                            </option>
+                            <option value="regimen_simple" {{ old('regimen_tributario') == 'regimen_simple' ? 'selected' : '' }}>
+                                Régimen Simple de Tributación
+                            </option>
+                        </select>
+                        @error('regimen_tributario')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+
+                <!-- Sección de Facturación Electrónica -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">Configuración de Facturación Electrónica</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Resolución de Facturación</label>
+                                <input type="text" 
+                                       name="resolucion_facturacion" 
+                                       class="form-control @error('resolucion_facturacion') is-invalid @enderror"
+                                       value="{{ old('resolucion_facturacion') }}">
+                                @error('resolucion_facturacion')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fecha de Resolución</label>
+                                <input type="date" 
+                                       name="fecha_resolucion" 
+                                       class="form-control @error('fecha_resolucion') is-invalid @enderror"
+                                       value="{{ old('fecha_resolucion') }}">
+                                @error('fecha_resolucion')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input type="checkbox" 
+                                           name="factura_electronica_habilitada" 
+                                           class="form-check-input" 
+                                           value="1" 
+                                           {{ old('factura_electronica_habilitada') ? 'checked' : '' }}>
+                                    <label class="form-check-label">
+                                        Habilitar Facturación Electrónica
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

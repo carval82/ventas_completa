@@ -22,7 +22,7 @@ class Comprobante extends Model
     ];
 
     protected $casts = [
-        'fecha' => 'date',
+        'fecha' => 'datetime',
         'total_debito' => 'decimal:2',
         'total_credito' => 'decimal:2'
     ];

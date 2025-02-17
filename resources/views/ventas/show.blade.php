@@ -71,6 +71,33 @@
                    </tfoot>
                </table>
            </div>
+
+           @if($venta->tipo_factura === 'electronica' && !$venta->cufe)
+               <form action="{{ route('ventas.dian', $venta) }}" method="POST" class="d-inline">
+                   @csrf
+                   <button type="submit" class="btn btn-primary">
+                       <i class="fas fa-paper-plane"></i> Enviar a DIAN
+                   </button>
+               </form>
+           @endif
+
+           @if($venta->cufe)
+               <div class="mt-3">
+                   <h5>Información DIAN</h5>
+                   <p><strong>CUFE:</strong> {{ $venta->cufe }}</p>
+                   <p><strong>Estado:</strong> {{ $venta->estado_dian }}</p>
+                   @if($venta->url_pdf)
+                       <a href="{{ $venta->url_pdf }}" target="_blank" class="btn btn-sm btn-info">
+                           <i class="fas fa-file-pdf"></i> Ver PDF DIAN
+                       </a>
+                   @endif
+                   @if($venta->url_xml)
+                       <a href="{{ $venta->url_xml }}" target="_blank" class="btn btn-sm btn-secondary">
+                           <i class="fas fa-file-code"></i> Ver XML DIAN
+                       </a>
+                   @endif
+               </div>
+           @endif
        </div>
    </div>
 </div>

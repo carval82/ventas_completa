@@ -3,14 +3,25 @@
 namespace App\Http\Controllers;
 
 use App\Models\Empresa;
+use App\Services\AlegraService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class EmpresaController extends Controller
 {
-    public function __construct()
+    protected $alegraService;
+
+    public function __construct(AlegraService $alegraService = null)
     {
         $this->middleware('auth');
+        
+        try {
+            $this->alegraService = $alegraService ?? new AlegraService();
+        } catch (\Exception $e) {
+            Log::error('Error al inicializar AlegraService: ' . $e->getMessage());
+            // Continuamos sin el servicio de Alegra
+        }
     }
 
     public function index()
@@ -35,15 +46,21 @@ class EmpresaController extends Controller
             'email' => 'nullable|email|max:255',
             'sitio_web' => 'nullable|url|max:255',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg|max:1024',
-            'regimen_tributario' => 'required|in:comun,simplificado'
+            'regimen_tributario' => 'required|in:responsable_iva,no_responsable_iva,regimen_simple',
+            'resolucion_facturacion' => 'nullable|string|max:255',
+            'fecha_resolucion' => 'nullable|date',
+            'factura_electronica_habilitada' => 'nullable|boolean'
         ]);
 
         try {
             $data = $request->except('logo');
-
+            
             if ($request->hasFile('logo')) {
                 $data['logo'] = $request->file('logo')->store('logos', 'public');
             }
+
+            // Asegurarse de que el checkbox se maneje correctamente
+            $data['factura_electronica_habilitada'] = $request->has('factura_electronica_habilitada');
 
             Empresa::create($data);
 
@@ -76,7 +93,10 @@ class EmpresaController extends Controller
             'email' => 'nullable|email|max:255',
             'sitio_web' => 'nullable|url|max:255',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg|max:1024',
-            'regimen_tributario' => 'required|in:comun,simplificado'
+            'regimen_tributario' => 'required|in:responsable_iva,no_responsable_iva,regimen_simple',
+            'resolucion_facturacion' => 'nullable|string|max:255',
+            'fecha_resolucion' => 'nullable|date',
+            'factura_electronica_habilitada' => 'nullable|boolean'
         ]);
 
         try {
@@ -89,6 +109,9 @@ class EmpresaController extends Controller
                 }
                 $data['logo'] = $request->file('logo')->store('logos', 'public');
             }
+
+            // Asegurarse de que el checkbox se maneje correctamente
+            $data['factura_electronica_habilitada'] = $request->has('factura_electronica_habilitada');
 
             $empresa->update($data);
 
@@ -112,6 +135,68 @@ class EmpresaController extends Controller
                            ->with('success', 'Información de la empresa eliminada exitosamente');
         } catch (\Exception $e) {
             return back()->with('error', 'Error al eliminar la información de la empresa');
+        }
+    }
+
+    public function obtenerResolucionAlegra(Request $request)
+    {
+        try {
+            Log::info('Iniciando solicitud de resolución Alegra');
+            
+            $resolucion = $this->alegraService->obtenerResolucionFacturacion();
+            
+            Log::info('Respuesta del servicio Alegra recibida', [
+                'respuesta' => $resolucion
+            ]);
+            
+            if ($resolucion['success']) {
+                Log::info('Resolución obtenida correctamente', [
+                    'data' => $resolucion['data']
+                ]);
+                
+                return response()->json([
+                    'success' => true,
+                    'resolucion' => $resolucion['data']['number'],
+                    'fecha' => $resolucion['data']['date']
+                ]);
+            }
+
+            Log::warning('No se pudo obtener la resolución', [
+                'error' => $resolucion['error']
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo obtener la resolución de Alegra: ' . 
+                            ($resolucion['error'] ?? 'Error desconocido')
+            ], 400);
+
+        } catch (\Exception $e) {
+            Log::error('Error en el controlador al obtener resolución', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener resolución: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function verificarFacturacionElectronica()
+    {
+        try {
+            $alegraService = app(AlegraService::class);
+            $response = $alegraService->verificarFacturacionElectronica();
+            
+            return response()->json($response);
+        } catch (\Exception $e) {
+            Log::error('Error al verificar FE', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 }

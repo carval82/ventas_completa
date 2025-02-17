@@ -9,13 +9,13 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
     {
         Schema::table('ventas', function (Blueprint $table) {
-            //
+            $table->decimal('pago', 10, 2);
+            $table->decimal('devuelta', 10, 2);
         });
     }
-
     /**
      * Reverse the migrations.
      */

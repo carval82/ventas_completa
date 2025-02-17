@@ -11,11 +11,48 @@ class Empresa extends Model
         'nombre_comercial',
         'razon_social',
         'nit',
-        'direccion', 
+        'direccion',
         'telefono',
         'email',
         'sitio_web',
         'logo',
-        'regimen_tributario'
+        'regimen_tributario',
+        'resolucion_facturacion',
+        'fecha_resolucion',
+        'factura_electronica_habilitada'
     ];
+
+    protected $casts = [
+        'fecha_resolucion' => 'date',
+        'factura_electronica_habilitada' => 'boolean'
+    ];
+
+    // Constantes para los regímenes tributarios
+    const REGIMEN_RESPONSABLE_IVA = 'responsable_iva';
+    const REGIMEN_NO_RESPONSABLE_IVA = 'no_responsable_iva';
+    const REGIMEN_SIMPLE = 'regimen_simple';
+
+    // Método helper para verificar si es responsable de IVA
+    public function esResponsableIva(): bool
+    {
+        return $this->regimen_tributario === self::REGIMEN_RESPONSABLE_IVA;
+    }
+
+    // Método helper para verificar si puede emitir facturas electrónicas
+    public function puedeEmitirFacturaElectronica(): bool
+    {
+        return $this->factura_electronica_habilitada && 
+               $this->resolucion_facturacion && 
+               $this->fecha_resolucion;
+    }
+
+    public function esRegimenSimple()
+    {
+        return $this->regimen_tributario === 'regimen_simple';
+    }
+
+    public function debeCalcularIVA()
+    {
+        return $this->esResponsableIVA() || $this->esRegimenSimple();
+    }
 }

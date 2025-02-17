@@ -25,6 +25,7 @@ use App\Http\Controllers\TurnoController;
 use App\Http\Controllers\CreditoController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use App\Services\AlegraService;
 // Rutas de Autenticación
 Auth::routes();
 
@@ -58,6 +59,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('ventas', VentaController::class);
     Route::get('ventas/{venta}/print', [VentaController::class, 'print'])
         ->name('ventas.print');
+    Route::post('ventas/{venta}/dian', [VentaController::class, 'enviarADian'])
+        ->name('ventas.dian');
 
     // Compras
     Route::controller(CompraController::class)->group(function () {
@@ -197,3 +200,13 @@ Route::middleware(['auth'])->group(function () {
 // Productos API
 Route::get('/api/productos/search', [ProductoController::class, 'searchApi'])
     ->name('api.productos.search');
+
+Route::get('/test-alegra-invoice', function(AlegraService $alegra) {
+    return $alegra->obtenerUltimaFactura();
+});
+
+Route::get('/empresa/obtener-resolucion', [EmpresaController::class, 'obtenerResolucionAlegra'])
+    ->name('empresa.obtener-resolucion');
+
+Route::get('/empresa/verificar-fe', [EmpresaController::class, 'verificarFacturacionElectronica'])
+    ->name('empresa.verificar-fe');

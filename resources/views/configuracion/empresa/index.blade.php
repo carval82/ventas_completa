@@ -19,14 +19,13 @@
         <div class="card-body">
             @if($empresa)
                 <div class="row">
-                    <!-- Logo actual -->
                     @if($empresa->logo)
-                    <div class="col-md-12 text-center mb-4">
-                    <img src="{{ asset('images/logo.png') }}" 
-                             alt="Logo de la empresa" 
-                             class="img-fluid"
-                             style="max-height: 150px;">
-                    </div>
+                        <div class="col-md-12 text-center mb-4">
+                            <img src="{{ Storage::url($empresa->logo) }}" 
+                                 alt="Logo de la empresa" 
+                                 class="img-fluid"
+                                 style="max-height: 150px;">
+                        </div>
                     @endif
 
                     <div class="col-md-6">
@@ -39,6 +38,21 @@
 
                             <dt class="col-sm-4">NIT:</dt>
                             <dd class="col-sm-8">{{ $empresa->nit }}</dd>
+
+                            <dt class="col-sm-4">Régimen Tributario:</dt>
+                            <dd class="col-sm-8">
+                                @switch($empresa->regimen_tributario)
+                                    @case('responsable_iva')
+                                        Responsable de IVA
+                                        @break
+                                    @case('no_responsable_iva')
+                                        No Responsable de IVA
+                                        @break
+                                    @case('regimen_simple')
+                                        Régimen Simple de Tributación
+                                        @break
+                                @endswitch
+                            </dd>
                         </dl>
                     </div>
 
@@ -52,19 +66,39 @@
 
                             <dt class="col-sm-4">Email:</dt>
                             <dd class="col-sm-8">{{ $empresa->email ?: 'No registrado' }}</dd>
+
+                            <dt class="col-sm-4">Sitio Web:</dt>
+                            <dd class="col-sm-8">{{ $empresa->sitio_web ?: 'No registrado' }}</dd>
                         </dl>
                     </div>
 
-                    <div class="col-md-12">
-                        <dl class="row">
-                            <dt class="col-sm-2">Sitio Web:</dt>
-                            <dd class="col-sm-10">{{ $empresa->sitio_web ?: 'No registrado' }}</dd>
+                    <!-- Nueva sección para Facturación Electrónica -->
+                    <div class="col-12 mt-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Información de Facturación Electrónica</h6>
+                            </div>
+                            <div class="card-body">
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-3">Resolución:</dt>
+                                    <dd class="col-sm-9">{{ $empresa->resolucion_facturacion ?: 'No registrada' }}</dd>
 
-                            <dt class="col-sm-2">Régimen Tributario:</dt>
-                            <dd class="col-sm-10">
-                                {{ $empresa->regimen_tributario == 'comun' ? 'Régimen Común' : 'Régimen Simplificado' }}
-                            </dd>
-                        </dl>
+                                    <dt class="col-sm-3">Fecha Resolución:</dt>
+                                    <dd class="col-sm-9">
+                                        {{ $empresa->fecha_resolucion ? $empresa->fecha_resolucion->format('d/m/Y') : 'No registrada' }}
+                                    </dd>
+
+                                    <dt class="col-sm-3">Estado:</dt>
+                                    <dd class="col-sm-9">
+                                        @if($empresa->factura_electronica_habilitada)
+                                            <span class="badge bg-success">Habilitada</span>
+                                        @else
+                                            <span class="badge bg-warning">No Habilitada</span>
+                                        @endif
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="col-12 mt-4">

@@ -81,7 +81,36 @@
 
                 <!-- Cliente y Fecha -->
                 <div class="row">
-                    <div class="col-md-8">
+                    <div class="col-md-3">
+                        <div class="form-group mb-3">
+                            <label class="form-label">Tipo de Factura</label>
+                            <select class="form-select" name="tipo_factura" id="tipo_factura">
+                                <option value="normal">Factura Normal</option>
+                                <option value="simplificada">Factura Simplificada</option>
+                                <option value="electronica">Factura Electrónica</option>
+                            </select>
+                        </div>
+                        <div class="form-group plantilla-factura-container" style="display: none;">
+                            <label for="plantilla_factura">Plantilla de Factura</label>
+                            <select class="form-select" name="plantilla_factura" id="plantilla_factura">
+                                <option value="">Seleccione una plantilla</option>
+                                <option value="FE">Factura Electrónica DIAN</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group mb-3">
+                            <label class="form-label">N° Factura</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" value="{{ $ultimo_numero }}" readonly>
+                                <button class="btn btn-outline-secondary" type="button" title="Ver últimas facturas" data-bs-toggle="popover" data-bs-html="true" data-bs-content="{{ $ultimas_facturas }}">
+                                    <i class="fas fa-history"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted">Último número generado automáticamente</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
                         <div class="form-group mb-3">
                             <label class="form-label required">Cliente</label>
                             <select class="form-control select2" name="cliente_id" required>
@@ -94,7 +123,7 @@
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group mb-3">
                             <label class="form-label">Fecha y Hora</label>
                             <input type="text" class="form-control" value="{{ now()->format('d/m/Y h:i A') }}" readonly>
@@ -150,11 +179,11 @@
                                 <th>Código</th>
                                 <th>Descripción</th>
                                 <th class="text-center">Stock</th>
-                                <th class="text-center" style="width: 120px;">Cantidad</th>
+                                <th class="text-center">Cantidad</th>
                                 <th class="text-end">Precio</th>
-                                <th class="text-end">IVA</th>
+                                <th class="text-end columna-iva">IVA</th>
                                 <th class="text-end">Subtotal</th>
-                                <th class="text-center" style="width: 60px;"></th>
+                                <th class="text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -166,27 +195,20 @@
                             <tr>
                                 <td colspan="5"></td>
                                 <th class="text-end">Subtotal:</th>
-                                <td class="text-end">$<span id="subtotal-display">0.00</span></td>
-                                <td></td>
+                                <td class="text-end" colspan="2">$<span id="subtotal-display">0.00</span></td>
                             </tr>
-                            <tr>
+                            <tr class="fila-iva">
                                 <td colspan="5"></td>
                                 <th class="text-end">IVA:</th>
-                                <td class="text-end">$<span id="iva-display">0.00</span></td>
-                                <td></td>
+                                <td class="text-end" colspan="2">$<span id="iva-display">0.00</span></td>
                             </tr>
                             <tr>
                                 <td colspan="5"></td>
                                 <th class="text-end">Total:</th>
-                                <td class="text-end">
-                                    <h4 class="m-0">$<span id="total-display">0.00</span></h4>
-                                </td>
-                                <td></td>
+                                <td class="text-end" colspan="2">$<span id="total-display">0.00</span></td>
                             </tr>
                         </tfoot>
                     </table>
-                             
-        
                 </div>
                 
 
@@ -330,18 +352,96 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-$(document).ready(function() {
-    // Variables globales
-    let productos = [];
-    let medicamentos = @json($productos);
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function() {
+            // Variables globales
+            window.productos = [];
+            window.listaProductos = @json($productos);
+            
+            console.log('Productos disponibles:', listaProductos); // Debug
+            
+            const empresa = @json($empresa);
+            const aplicaIVA = empresa.regimen === 'responsable_iva';
+            
+            async function nuevoCliente() {
+                $('.select2-cliente').val(null).trigger('change');
+                
+                const { value: formValues } = await Swal.fire({
+                    title: 'Nuevo Cliente',
+                    html: `
+                        <form id="clienteForm">
+                            <div class="mb-3">
+                                <label class="form-label required">Cédula/NIT</label>
+                                <input type="text" class="form-control" id="cedula" name="cedula" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label required">Nombres</label>
+                                <input type="text" class="form-control" id="nombres" name="nombres" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Teléfono</label>
+                                <input type="text" class="form-control" id="telefono" name="telefono">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Dirección</label>
+                                <input type="text" class="form-control" id="direccion" name="direccion">
+                            </div>
+                        </form>
+                    `,
+                    focusConfirm: false,
+                    showCancelButton: true,
+                    confirmButtonText: 'Guardar',
+                    cancelButtonText: 'Cancelar',
+                    preConfirm: () => {
+                        const form = document.getElementById('clienteForm');
+                        const formData = new FormData(form);
+                        
+                        return $.ajax({
+                            url: '{{ route("clientes.store") }}',
+                            type: 'POST',
+                            data: formData,
+                            processData: false,
+                            contentType: false
+                        }).catch(error => {
+                            Swal.showValidationMessage(
+                                `Error: ${error.responseJSON?.message || 'No se pudo crear el cliente'}`
+                            );
+                        });
+                    }
+                });
 
-    // Inicializar Select2
-    $('.select2').select2({
-        placeholder: 'Seleccionar cliente...',
-        allowClear: true
-    });
+                if (formValues && formValues.success) {
+                    const option = new Option(
+                        formValues.cliente.cedula + ' - ' + formValues.cliente.nombres,
+                        formValues.cliente.id,
+                        true,
+                        true
+                    );
+                    $('.select2-cliente').append(option).trigger('change');
+                }
+            }
+
+            // Inicializar Select2
+            $('.select2-cliente').select2({
+                placeholder: 'Seleccionar cliente...',
+                allowClear: true,
+                language: {
+                    noResults: function() {
+                        return `<div class="nuevo-cliente-option" value="new-client">Nuevo cliente...</div>`;
+                    }
+                },
+                escapeMarkup: function(markup) {
+                    return markup;
+                }
+            }).on('select2:open', function() {
+                // Evitar que select2 capture todos los eventos de teclado
+                $('.select2-search__field').off('keydown').on('keydown', function(e) {
+                    e.stopPropagation();
+                });
+            });
+
+            $(document).on("click", ".nuevo-cliente-option", nuevoCliente);
 
     // Recuperar estado guardado
     const estadoVentaTemp = localStorage.getItem('estadoVentaTemp');
@@ -364,310 +464,333 @@ $(document).ready(function() {
     localStorage.removeItem('estadoVentaTemp');
     @endif
 
-    // Atajos de teclado
-    $(document).on('keydown', function(e) {
-        // F8 - Buscar Cliente
-        if (e.which === 119) {
-            e.preventDefault();
-            $('.select2').select2('open');
-        }
-        
-        // F9 - Eliminar último producto
-        if (e.which === 120) {
-            e.preventDefault();
-            if (productos.length > 0) {
-                eliminarProducto(productos.length - 1);
+            // Atajos de teclado
+            $(document).on('keydown', function(e) {
+                // F8 - Buscar Cliente
+                if (e.which === 119) {
+                    e.preventDefault();
+                    $('.select2-cliente').select2('open');
+                }
+
+                // F9 - Eliminar último producto
+                if (e.which === 120) {
+                    e.preventDefault();
+                    if (productos.length > 0) {
+                        eliminarProducto(productos.length - 1);
+                    }
+                }
+
+                // F10 - Ver Catálogo
+                if (e.which === 121) {
+                    e.preventDefault();
+                    $('#productosModal').modal('show');
+                }
+
+                // F12 - Guardar Venta
+                if (e.which === 123) {
+                    e.preventDefault();
+                    mostrarModalConfirmacion();
+                }
+            });
+            // Evento para guardar estado antes de ir a crear nuevo producto
+            $('a[href*="productos/create"]').on('click', function(e) {
+                e.preventDefault();
+
+                // Guardar el estado actual de la venta
+                const estadoVenta = {
+                    productos: productos,
+                    cliente_id: $('select[name="cliente_id"]').val(),
+                    cliente_texto: $('select[name="cliente_id"] option:selected').text()
+                };
+
+                localStorage.setItem('estadoVentaTemp', JSON.stringify(estadoVenta));
+
+                // Redirigir a la creación del producto
+                window.location.href = $(this).attr('href');
+            });
+
+            // Asegurar que el input de búsqueda de productos no sea afectado por select2
+            $('#busqueda-producto').on('focus click', function(e) {
+                e.stopPropagation();
+            }).on('keypress', function(e) {
+                if (e.which === 13) { // Enter
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const busqueda = $(this).val().trim().toLowerCase();
+                    
+                    if (!busqueda) return;
+                    
+                    // Primero buscar por código exacto (para código de barras)
+                    let producto = listaProductos.find(p => 
+                        p.codigo.toLowerCase() === busqueda
+                    );
+                    
+                    // Si no encuentra por código, buscar por nombre
+                    if (!producto) {
+                        producto = listaProductos.find(p => 
+                            p.nombre.toLowerCase().includes(busqueda)
+                        );
+                    }
+                    
+                    if (producto) {
+                        agregarProducto(producto);
+                        $(this).val('').focus(); // Limpiar y mantener foco
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Producto no encontrado',
+                            text: 'No se encontró ningún producto con ese código o nombre',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                        $(this).select(); // Seleccionar texto para facilitar nueva búsqueda
+                    }
+                }
+            });
+
+            // Asegurar que el input de búsqueda mantenga el foco
+            $(document).ready(function() {
+                $('#busqueda-producto').focus();
+            });
+
+            // Delegación de eventos para los botones de selección
+            $(document).on('click', '.btn-seleccionar', function() {
+                const producto = $(this).data('producto');
+                agregarProducto(producto);
+            });
+
+            // Función para agregar producto (ya sea por escaneo o selección manual)
+            function agregarProducto(producto) {
+                if (!producto) return;
+                
+                // Buscar si el producto ya existe
+                const existente = productos.find(p => p.id === producto.id);
+                
+                if (existente) {
+                    // Si existe, incrementar cantidad si hay stock
+                    if (existente.cantidad < producto.stock) {
+                        existente.cantidad++;
+                        actualizarTablaProductos();
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Stock insuficiente',
+                            text: 'No hay más unidades disponibles de este producto',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    }
+                } else {
+                    // Si no existe, agregarlo como nuevo
+                    productos.push({
+                        id: producto.id,
+                        codigo: producto.codigo,
+                        nombre: producto.nombre,
+                        stock: parseInt(producto.stock),
+                        cantidad: 1,
+                        precio_venta: parseFloat(producto.precio_venta)
+                    });
+                    actualizarTablaProductos();
+                }
             }
-        }
-        
-        // F10 - Ver Catálogo
-        if (e.which === 121) {
-            e.preventDefault();
-            $('#productosModal').modal('show');
-        }
-        
-        // F12 - Guardar Venta
-        if (e.which === 123) {
-            e.preventDefault();
-            mostrarModalConfirmacion();
-        }
-    });
-    // Evento para guardar estado antes de ir a crear nuevo producto
-    $('a[href*="productos/create"]').on('click', function(e) {
-        e.preventDefault();
-        
-        // Guardar el estado actual de la venta
-        const estadoVenta = {
-            productos: productos,
-            cliente_id: $('select[name="cliente_id"]').val(),
-            cliente_texto: $('select[name="cliente_id"] option:selected').text()
-        };
-        
-        localStorage.setItem('estadoVentaTemp', JSON.stringify(estadoVenta));
-        
-        // Redirigir a la creación del producto
-        window.location.href = $(this).attr('href');
-    });
 
-    // Búsqueda con scanner o manual
-    $('#busqueda-producto').on('keypress', function(e) {
-        if (e.which === 13) {
-            e.preventDefault();
-            const busqueda = $(this).val().trim();
-            console.log('Búsqueda:', busqueda);
-            
-            if(!busqueda) return;
+            // Modificar la función actualizarTablaProductos
+            function actualizarTablaProductos() {
+                const tbody = $('#productos-table tbody');
+                
+                // Ocultar/Mostrar columnas de IVA según régimen
+                if (!aplicaIVA) {
+                    $('.columna-iva').hide();
+                    $('.fila-iva').hide();
+                }
+                
+                tbody.empty();
 
-            const producto = medicamentos.find(p => 
-                p.codigo.toLowerCase() === busqueda.toLowerCase() || 
-                p.nombre.toLowerCase().includes(busqueda.toLowerCase())
-            );
-            
-            console.log('Producto encontrado:', producto);
+                // Limpiar campos ocultos de productos anteriores
+                $('input[name^="productos"]').remove();
 
-            if(producto) {
-                seleccionarProducto(producto);
-                $(this).val('').focus();
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Producto no encontrado',
-                    text: 'El código o nombre ingresado no corresponde a ningún producto.',
-                    confirmButtonColor: '#3085d6',
-                    confirmButtonText: 'OK'
-                }).then(() => {
-                    $(this).val('').focus();
+                if (productos.length === 0) {
+                    tbody.html(`<tr><td colspan="${aplicaIVA ? 8 : 7}" class="text-center">No hay productos agregados</td></tr>`);
+                    return;
+                }
+
+                productos.forEach((producto, index) => {
+                    const subtotal = producto.cantidad * producto.precio_venta;
+                    const iva = aplicaIVA ? Math.round(subtotal * (empresa.porcentaje_iva / 100)) : 0;
+                    const subtotal_sin_iva = aplicaIVA ? subtotal - iva : subtotal;
+
+                    tbody.append(`
+                        <tr id="producto-${producto.id}">
+                            <td>${producto.codigo}</td>
+                            <td>${producto.nombre}</td>
+                            <td class="text-center">${producto.stock}</td>
+                            <td class="text-center">
+                                <input type="number" 
+                                       class="form-control cantidad-input" 
+                                       value="${producto.cantidad}"
+                                       min="1"
+                                       max="${producto.stock}"
+                                       onchange="actualizarCantidad(${index}, this.value)"
+                                       onclick="this.select()"
+                                       style="width: 80px; text-align: center; margin: 0 auto;">
+                            </td>
+                            <td class="text-end">${producto.precio_venta.toLocaleString()}</td>
+                            ${aplicaIVA ? `<td class="text-end columna-iva">${iva.toLocaleString()}</td>` : ''}
+                            <td class="text-end">${subtotal_sin_iva.toLocaleString()}</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-danger" onclick="eliminarProducto(${index})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+
+                    // Agregar campos ocultos para enviar al servidor
+                    $('#ventaForm').append(`
+                        <input type="hidden" name="productos[${index}][id]" value="${producto.id}">
+                        <input type="hidden" name="productos[${index}][cantidad]" value="${producto.cantidad}">
+                        <input type="hidden" name="productos[${index}][precio]" value="${producto.precio_venta}">
+                    `);
                 });
-            }
-        }
-    });
 
-    $('#btn-buscar').on('click', function() {
-        const busqueda = $('#busqueda-producto').val().trim();
-        if (!busqueda) {
-            $('#productosModal').modal('show');
-            return;
-        }
-
-        const producto = medicamentos.find(p => 
-            p.codigo.toLowerCase() === busqueda.toLowerCase() || 
-            p.nombre.toLowerCase().includes(busqueda.toLowerCase())
-        );
-
-        if(producto) {
-            seleccionarProducto(producto);
-            $('#busqueda-producto').val('').focus();
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Producto no encontrado',
-                text: 'El código o nombre ingresado no corresponde a ningún producto.',
-                confirmButtonColor: '#3085d6',
-                confirmButtonText: 'OK'
-            }).then(() => {
-                $('#busqueda-producto').val('').focus();
-            });
-        }
-    });
-
-    // Búsqueda en modal
-    $('#modal-busqueda').on('keyup', function() {
-        const busqueda = $(this).val().toLowerCase().trim();
-        
-        $('#tabla-productos-modal tbody tr').each(function() {
-            const texto = $(this).text().toLowerCase();
-            $(this).toggle(texto.indexOf(busqueda) > -1);
-        });
-    });
-
-    // Seleccionar producto desde el modal
-    $('.btn-seleccionar').on('click', function() {
-        const producto = $(this).data('producto');
-        seleccionarProducto(producto);
-        $('#productosModal').modal('hide');
-        $('#busqueda-producto').focus();
-    });
-    function seleccionarProducto(producto) {
-        if (producto.stock <= 0) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Sin stock',
-                text: 'Este producto no tiene stock disponible.',
-                confirmButtonColor: '#3085d6',
-                confirmButtonText: 'OK'
-            });
-            return;
-        }
-
-        // Buscar si el producto ya existe en la tabla
-        const productoExistente = productos.find(p => p.id === producto.id);
-        
-        if (productoExistente) {
-            // Verificar que no exceda el stock disponible
-            if (productoExistente.cantidad + 1 <= producto.stock) {
-                productoExistente.cantidad += 1;
-                productoExistente.subtotal = productoExistente.cantidad * productoExistente.precio;
-            } else {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Stock Insuficiente',
-                    text: 'No hay suficiente stock disponible.',
-                    confirmButtonColor: '#3085d6',
-                    confirmButtonText: 'OK'
-                });
-            }
-        } else {
-            const precioTotal = parseFloat(producto.precio_venta);
-            const iva = precioTotal * 0.19 / 1.19;
-            const precioBase = precioTotal - iva;
-
-            productos.push({
-                id: producto.id,
-                codigo: producto.codigo,
-                nombre: producto.nombre,
-                cantidad: 1,
-                precio: precioTotal,
-                iva_valor: iva,
-                subtotal: precioTotal,
-                stock: producto.stock
-            });
-        }
-
-        actualizarTabla();
-        calcularTotales();
-    }
-
-    function actualizarTabla() {
-        const tbody = document.querySelector('#productos-table tbody');
-        tbody.innerHTML = '';
-
-        if (productos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No hay productos agregados</td></tr>';
-            return;
-        }
-
-        productos.forEach((producto, index) => {
-            const subtotal = producto.cantidad * producto.precio;
-            const iva = Math.round(subtotal * 0.19);
-            const subtotal_sin_iva = subtotal - iva;
-
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${producto.codigo}</td>
-                <td>${producto.nombre}</td>
-                <td class="text-center">${producto.stock}</td>
-                <td class="text-center">
-                    <input type="number" 
-                           class="form-control form-control-sm cantidad-input" 
-                           value="${producto.cantidad}" 
-                           min="1" 
-                           max="${producto.stock}"
-                           onchange="actualizarCantidad(${index}, this.value)">
-                </td>
-                <td class="text-end">${producto.precio.toLocaleString()}</td>
-                <td class="text-end">${iva.toLocaleString()}</td>
-                <td class="text-end">${subtotal_sin_iva.toLocaleString()}</td>
-                <td class="text-center">
-                    <button type="button" class="btn btn-danger btn-sm" onclick="eliminarProducto(${index})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                    <input type="hidden" name="productos[${index}][id]" value="${producto.id}">
-                    <input type="hidden" name="productos[${index}][cantidad]" value="${producto.cantidad}">
-                    <input type="hidden" name="productos[${index}][precio]" value="${producto.precio}">
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    window.actualizarCantidad = function(index, cantidad) {
-        cantidad = parseInt(cantidad);
-        if (cantidad < 1) cantidad = 1;
-        if (cantidad > productos[index].stock) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Stock Insuficiente',
-                text: 'La cantidad excede el stock disponible.',
-                confirmButtonColor: '#3085d6',
-                confirmButtonText: 'OK'
-            });
-            cantidad = productos[index].stock;
-        }
-        productos[index].cantidad = cantidad;
-        productos[index].subtotal = cantidad * productos[index].precio;
-        actualizarTabla();
-        calcularTotales();
-    }
-    window.eliminarProducto = function(index) {
-        Swal.fire({
-            title: '¿Está seguro?',
-            text: "¿Desea eliminar este producto de la lista?",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                productos.splice(index, 1);
-                actualizarTabla();
                 calcularTotales();
             }
-        });
-    }
 
-    function calcularTotales() {
-        let total = 0;
-        
-        productos.forEach(producto => {
-            total += producto.cantidad * producto.precio;
-        });
+            // Modificar la función actualizarCantidad para que sea accesible globalmente
+            window.actualizarCantidad = function(index, cantidad) {
+                cantidad = parseInt(cantidad);
+                
+                if (!productos[index]) {
+                    console.error('Producto no encontrado en índice:', index);
+                    return;
+                }
 
-        const iva = Math.round(total * 0.19);
-        const subtotal = total - iva;
+                if (cantidad < 1) cantidad = 1;
+                if (cantidad > productos[index].stock) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Stock Insuficiente',
+                        text: 'La cantidad excede el stock disponible',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                    cantidad = productos[index].stock;
+                }
 
-        // Actualizar displays
-        $('#subtotal-display').text(subtotal.toLocaleString());
-        $('#iva-display').text(iva.toLocaleString());
-        $('#total-display').text(total.toLocaleString());
+                productos[index].cantidad = cantidad;
+                actualizarTablaProductos();
+                calcularTotales(); // Asegurarnos que se actualicen los totales
+            };
 
-        // Actualizar campos ocultos
-        $('input[name="subtotal"]').val(subtotal);
-        $('input[name="iva"]').val(iva);
-        $('input[name="total"]').val(total);
-        
-        // Actualizar total en modal si existe
-        if($('#totalAPagar').length) {
-            $('#totalAPagar').val(total);
-        }
-    }
+            window.eliminarProducto = function(index) {
+                Swal.fire({
+                    title: '¿Está seguro?',
+                    text: "¿Desea eliminar este producto de la lista?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        productos.splice(index, 1);
+                        actualizarTablaProductos();
+                        calcularTotales();
+                    }
+                });
+            }
 
-    // Validación del formulario
-    document.getElementById('ventaForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        if (productos.length === 0) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Debe agregar al menos un producto a la venta',
-                confirmButtonColor: '#3085d6',
-                confirmButtonText: 'OK'
+            // Modificar la función calcularTotales
+            function calcularTotales() {
+                let total = 0;
+                let iva_total = 0;
+
+                productos.forEach(producto => {
+                    const subtotal = producto.cantidad * producto.precio_venta;
+                    if (aplicaIVA) {
+                        const iva = Math.round(subtotal * (empresa.porcentaje_iva / 100));
+                        iva_total += iva;
+                        total += subtotal;
+                    } else {
+                        total += subtotal;
+                    }
+                });
+
+                const subtotal = aplicaIVA ? total - iva_total : total;
+
+                $('#subtotal-display').text(subtotal.toLocaleString());
+                $('#iva-display').text(iva_total.toLocaleString());
+                $('#total-display').text(total.toLocaleString());
+
+                $('input[name="subtotal"]').val(subtotal);
+                $('input[name="iva"]').val(iva_total);
+                $('input[name="total"]').val(total);
+            }
+
+            // Modificar el evento change del tipo de factura
+            $('#tipo_factura').on('change', function() {
+                const tipoFactura = $(this).val();
+                
+                // Ocultar/Mostrar columnas de IVA según régimen
+                if (tipoFactura === 'simplificada') {
+                    $('.columna-iva').hide();
+                    $('.fila-iva').hide();
+                } else {
+                    $('.columna-iva').show();
+                    $('.fila-iva').show();
+                }
+
+                // Manejar plantilla de factura electrónica
+                if (tipoFactura === 'electronica') {
+                    // Establecer el valor de la plantilla directamente
+                    $('#plantilla_factura').val('FE');
+                    $('.plantilla-factura-container').show();
+                    
+                    // Verificar con Alegra (opcional)
+                    $.get('{{ route("empresa.verificar-fe") }}')
+                        .done(function(response) {
+                            if (!response.success || !response.habilitado) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'No habilitado',
+                                    text: 'Error al verificar facturación electrónica'
+                                });
+                                $(this).val('normal');
+                                $('#plantilla_factura').val('');
+                                $('.plantilla-factura-container').hide();
+                            }
+                        })
+                        .fail(function() {
+                            console.log('Error al verificar facturación electrónica');
+                        });
+                } else {
+                    $('#plantilla_factura').val('');
+                    $('.plantilla-factura-container').hide();
+                }
+
+                actualizarTablaProductos();
             });
-            return;
-        }
 
-        if (!$('select[name="cliente_id"]').val()) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Debe seleccionar un cliente',
-                confirmButtonColor: '#3085d6',
-                confirmButtonText: 'OK'
-            });
-            return;
-        }
+            // Asegurarnos que el valor de la plantilla se incluya en el formulario
+            $('#ventaForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                if (productos.length === 0) {
+                    Swal.fire('Error', 'Debe agregar al menos un producto', 'error');
+                    return;
+                }
+
+                if (!$('select[name="cliente_id"]').val()) {
+                    Swal.fire('Error', 'Debe seleccionar un cliente', 'error');
+                    return;
+                }
+
+                // Validar plantilla para factura electrónica
+                if ($('#tipo_factura').val() === 'electronica' && !$('#plantilla_factura').val()) {
+                    Swal.fire('Error', 'Debe seleccionar una plantilla para factura electrónica', 'error');
+                    return;
+                }
 
         mostrarModalConfirmacion();
     });
@@ -853,11 +976,11 @@ window.guardarVentaTemp = function() {
             localStorage.setItem('ventasGuardadas', JSON.stringify(ventasGuardadas));
             actualizarListaVentas();
 
-            // Limpiar formulario actual
-            productos = [];
-            $('select[name="cliente_id"]').val('').trigger('change');
-            actualizarTabla();
-            calcularTotales();
+                        // Limpiar formulario actual
+                        productos = [];
+                        $('select[name="cliente_id"]').val('').trigger('change');
+                        actualizarTablaProductos();
+                        calcularTotales();
 
             Swal.fire({
                 icon: 'success',
@@ -869,22 +992,22 @@ window.guardarVentaTemp = function() {
     });
 };
 
-window.cargarVenta = function(id) {
-    const ventasGuardadas = JSON.parse(localStorage.getItem('ventasGuardadas') || '[]');
-    const venta = ventasGuardadas.find(v => v.id === id);
-    
-    if (venta) {
-        // Limpiar estado actual
-        productos = [];
-        $('select[name="cliente_id"]').val('').trigger('change');
-        actualizarTabla();
-        calcularTotales();
+            window.cargarVenta = function(id) {
+                const ventasGuardadas = JSON.parse(localStorage.getItem('ventasGuardadas') || '[]');
+                const venta = ventasGuardadas.find(v => v.id === id);
 
-        // Cargar la venta seleccionada
-        productos = venta.productos;
-        $('select[name="cliente_id"]').val(venta.cliente_id).trigger('change');
-        actualizarTabla();
-        calcularTotales();
+                if (venta) {
+                    // Limpiar estado actual
+                    productos = [];
+                    $('select[name="cliente_id"]').val('').trigger('change');
+                    actualizarTablaProductos();
+                    calcularTotales();
+
+                    // Cargar la venta seleccionada
+                    productos = venta.productos;
+                    $('select[name="cliente_id"]').val(venta.cliente_id).trigger('change');
+                    actualizarTablaProductos();
+                    calcularTotales();
 
         // Eliminar la venta del almacenamiento temporal
         const ventasActualizadas = ventasGuardadas.filter(v => v.id !== id);

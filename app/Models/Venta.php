@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\GeneraComprobanteContable;
+use App\Models\Traits\GeneraComprobanteVentaCredito;
+use Illuminate\Support\Facades\Log;
 
 class Venta extends Model
 {
     use GeneraComprobanteContable;
+    use GeneraComprobanteVentaCredito;
 
     protected $fillable = [
         'numero_factura', 'fecha_venta', 
@@ -45,6 +48,20 @@ class Venta extends Model
     protected static function booted()
     {
         static::created(function($venta) {
+            Log::info('Venta creada - Verificando método de pago', [
+                'venta_id' => $venta->id,
+                'metodo_pago' => $venta->metodo_pago,
+                'traits_loaded' => class_uses_recursive($venta),
+                'tiene_metodo' => method_exists($venta, 'generarComprobanteVentaCredito')
+            ]);
+
+            // Evitar que se genere comprobante normal para ventas a crédito
+            if ($venta->metodo_pago === 'credito') {
+                Log::info('Venta a crédito detectada - No generando comprobante normal');
+                return;
+            }
+
+            Log::info('Generando comprobante de venta normal');
             $venta->generarComprobanteVenta();
         });
     }
