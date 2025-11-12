@@ -169,10 +169,12 @@
                                 <input type="text" 
                                        name="resolucion_facturacion" 
                                        class="form-control @error('resolucion_facturacion') is-invalid @enderror"
-                                       value="{{ old('resolucion_facturacion') }}">
+                                       value="{{ old('resolucion_facturacion', 'No aplica') }}"
+                                       placeholder="Ej: 18764083087981 o 'No aplica'">
                                 @error('resolucion_facturacion')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
+                                <small class="text-muted">Dejar 'No aplica' si no maneja facturación electrónica</small>
                             </div>
 
                             <div class="col-md-6 mb-3">
@@ -187,7 +189,7 @@
                             </div>
 
                             <div class="col-12">
-                                <div class="form-check">
+                                <div class="form-check mb-3">
                                     <input type="checkbox" 
                                            name="factura_electronica_habilitada" 
                                            class="form-check-input" 
@@ -197,7 +199,50 @@
                                         Habilitar Facturación Electrónica
                                     </label>
                                 </div>
+                                
+                                <div class="form-check">
+                                    <input type="checkbox" 
+                                           name="alegra_multiples_impuestos" 
+                                           class="form-check-input" 
+                                           value="1" 
+                                           {{ old('alegra_multiples_impuestos') ? 'checked' : '' }}>
+                                    <label class="form-check-label">
+                                        Empresa con múltiples impuestos en Alegra
+                                    </label>
+                                    <small class="form-text text-muted">Marcar si la empresa maneja múltiples tipos de impuestos</small>
+                                </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección de Credenciales de Alegra -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">Credenciales de Alegra</h6>
+                        <p class="text-muted small">Estas credenciales son necesarias para la facturación electrónica</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Email de Alegra</label>
+                                <input type="email" name="alegra_email" class="form-control @error('alegra_email') is-invalid @enderror" 
+                                       value="{{ old('alegra_email') }}">
+                                @error('alegra_email')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Token de Alegra</label>
+                                <input type="password" name="alegra_token" class="form-control @error('alegra_token') is-invalid @enderror" 
+                                       value="{{ old('alegra_token') }}">
+                                @error('alegra_token')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Para probar la conexión con Alegra, primero debes guardar la empresa y luego editar sus datos.
                         </div>
                     </div>
                 </div>

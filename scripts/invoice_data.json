@@ -1,0 +1,28 @@
+{
+    "date": "2025-03-10",
+    "dueDate": "2025-03-10",
+    "client": {
+        "id": 38
+    },
+    "items": [
+        {
+            "id": 67,
+            "price": 26000,
+            "quantity": 1,
+            "description": "ANKOFEN"
+        }
+    ],
+    "paymentForm": "CASH",
+    "paymentMethod": "CASH",
+    "payment": {
+        "paymentMethod": {
+            "id": 10
+        },
+        "account": {
+            "id": 1
+        }
+    },
+    "numberTemplate": {
+        "id": 19
+    }
+}

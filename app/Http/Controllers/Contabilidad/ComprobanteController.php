@@ -40,6 +40,7 @@ class ComprobanteController extends Controller
         $request->validate([
             'fecha' => 'required|date',
             'tipo' => 'required|in:Ingreso,Egreso,Diario',
+            'prefijo' => 'nullable|string|max:10',
             'descripcion' => 'required',
             'movimientos' => 'required|array|min:1',
             'movimientos.*.cuenta_id' => 'required|exists:plan_cuentas,id',
@@ -63,6 +64,7 @@ class ComprobanteController extends Controller
 
             // Crear comprobante
             $comprobante = Comprobante::create([
+                'prefijo' => $request->prefijo,
                 'numero' => $request->numero,
                 'fecha' => $request->fecha,
                 'tipo' => $request->tipo,
@@ -158,6 +160,10 @@ class ComprobanteController extends Controller
             $query->where('fecha', '<=', $request->fecha_hasta);
         }
 
+        if ($request->filled('prefijo')) {
+            $query->where('prefijo', 'LIKE', "%{$request->prefijo}%");
+        }
+
         if ($request->filled('tipo')) {
             $query->where('tipo', $request->tipo);
         }
@@ -170,6 +176,7 @@ class ComprobanteController extends Controller
             $search = $request->q;
             $query->where(function($q) use ($search) {
                 $q->where('numero', 'LIKE', "%{$search}%")
+                  ->orWhere('prefijo', 'LIKE', "%{$search}%")
                   ->orWhere('descripcion', 'LIKE', "%{$search}%");
             });
         }

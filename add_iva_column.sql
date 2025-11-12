@@ -1,0 +1,1 @@
+ALTER TABLE productos ADD COLUMN iva DECIMAL(5,2) DEFAULT 0 AFTER precio_venta;

@@ -33,7 +33,7 @@
             <div class="d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
                     <i class="fas fa-file-invoice"></i> 
-                    Comprobante {{ $comprobante->numero }}
+                    Comprobante {{ $comprobante->prefijo ? $comprobante->prefijo . '-' : '' }}{{ $comprobante->numero }}
                 </h5>
                 <div>
                     @if($comprobante->estado == 'Borrador')
@@ -78,7 +78,11 @@
 
             <!-- Información del Comprobante -->
             <div class="row mb-4">
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <label class="fw-bold">Prefijo:</label>
+                    <div>{{ $comprobante->prefijo ?: 'N/A' }}</div>
+                </div>
+                <div class="col-md-2">
                     <label class="fw-bold">Número:</label>
                     <div>{{ $comprobante->numero }}</div>
                 </div>
@@ -86,7 +90,7 @@
                     <label class="fw-bold">Fecha:</label>
                     <div>{{ $comprobante->fecha->format('d/m/Y') }}</div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="fw-bold">Tipo:</label>
                     <div>
                         <span class="badge bg-{{ 

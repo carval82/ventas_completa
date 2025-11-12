@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-
 use App\Models\Venta;
 use App\Models\Cliente;
 use App\Models\Producto;
@@ -10,6 +9,10 @@ use App\Models\DetalleVenta;
 use App\Models\StockUbicacion;
 use App\Models\Empresa;
 use App\Models\Credito;
+use App\Models\CajaDiaria;
+use App\Models\MovimientoCaja;
+use App\Services\ContabilidadService;
+use App\Services\IvaValidationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -22,9 +25,93 @@ class VentaController extends Controller
 {
     protected $alegraService;
 
-    public function __construct(AlegraService $alegraService)
+    public function __construct(AlegraService $alegraService = null)
     {
-        $this->alegraService = $alegraService;
+        // Inicializar el servicio de Alegra sin requerir inyección de dependencias
+        $this->alegraService = $alegraService ?? new AlegraService();
+    }
+
+    /**
+     * Vista de impresión de factura usando el formato configurado en la empresa
+     */
+    public function print($id)
+    {
+        $venta = Venta::with(['cliente', 'detalles.producto', 'usuario'])->findOrFail($id);
+        
+        // Obtener datos de la empresa
+        $empresa = \App\Models\Empresa::first();
+        
+        // Determinar la vista según el formato configurado
+        $formato = $empresa->formato_impresion ?? '80mm';
+        
+        $vistas = [
+            '58mm' => 'ventas.print_58mm',
+            '80mm' => 'ventas.print',
+            'media_carta' => 'ventas.print_media_carta'
+        ];
+        
+        $vista = $vistas[$formato] ?? 'ventas.print';
+        
+        return view($vista, compact('venta', 'empresa'));
+    }
+    
+    /**
+     * Vista de impresión de factura en formato 58mm (forzado)
+     */
+    public function print58mm($id)
+    {
+        $venta = Venta::with(['cliente', 'detalles.producto', 'usuario'])->findOrFail($id);
+        $empresa = \App\Models\Empresa::first();
+        
+        return view('ventas.print_58mm', compact('venta', 'empresa'));
+    }
+    
+    /**
+     * Vista de impresión de factura en formato 80mm (forzado)
+     */
+    public function print80mm($id)
+    {
+        $venta = Venta::with(['cliente', 'detalles.producto', 'usuario'])->findOrFail($id);
+        $empresa = \App\Models\Empresa::first();
+        
+        return view('ventas.print', compact('venta', 'empresa'));
+    }
+
+    /**
+     * Vista de impresión de factura en formato media carta
+     */
+    public function printMediaCarta($id)
+    {
+        $venta = Venta::with(['cliente', 'detalles.producto', 'usuario'])->findOrFail($id);
+        
+        // Obtener datos de la empresa
+        $empresa = \App\Models\Empresa::first();
+        
+        return view('ventas.print_media_carta', compact('venta', 'empresa'));
+    }
+
+    /**
+     * Determina si un producto es un servicio basado en su nombre
+     */
+    private function esServicioPorNombre($nombre)
+    {
+        $nombreLower = strtolower($nombre);
+        $palabrasServicio = [
+            'servicio', 'instalacion', 'instalación', 'mantenimiento', 
+            'reparacion', 'reparación', 'soporte', 'configuracion', 
+            'configuración', 'mano de obra', 'licencia', 'internet', 
+            'kaspersky', 'office', 'windows', 'implementacion', 
+            'implementación', 'revision', 'revisión', 'reubicacion',
+            'reubicación', 'desinstalacion', 'desinstalación'
+        ];
+        
+        foreach ($palabrasServicio as $palabra) {
+            if (strpos($nombreLower, $palabra) !== false) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     public function index(Request $request)
@@ -71,13 +158,30 @@ class VentaController extends Controller
                 ->with('error', 'Debe configurar los datos de la empresa antes de crear ventas');
         }
         
+        // Verificar si hay una caja abierta
+        $cajaAbierta = CajaDiaria::obtenerCajaAbierta();
+        
+        if (!$cajaAbierta) {
+            return redirect()->route('cajas.create')
+                ->with('error', 'Debe abrir una caja antes de realizar ventas');
+        }
+        
         date_default_timezone_set('America/Bogota');
         
         // Obtener otros datos necesarios
         $clientes = Cliente::where('estado', '1')->get();
+        
+        // Obtener productos y asegurarse de que tengan precio_final correcto
         $productos = Producto::where('estado', '1')
                             ->where('stock', '>', 0)
-                            ->get();
+                            ->get()
+                            ->map(function($producto) {
+                                // Si no tiene precio_final, calcularlo a partir del precio_venta y el IVA
+                                if (!$producto->precio_final || $producto->precio_final == 0) {
+                                    $producto->precio_final = $producto->precio_venta * (1 + ($producto->iva / 100));
+                                }
+                                return $producto;
+                            });
         $ultima_venta = Venta::latest()->first();
         $ultimas_ventas = Venta::latest()->take(5)->get();
         
@@ -92,21 +196,32 @@ class VentaController extends Controller
         })
         ->implode('');
         
-        return view('ventas.create', [
+        // Determinar qué vista usar según el régimen de la empresa
+        $data = [
             'empresa' => $empresa,
             'clientes' => $clientes,
             'productos' => $productos,
             'fecha_actual' => now()->format('d/m/Y h:i A'),
             'ultimo_numero' => $ultimo_numero,
             'ultimas_facturas' => $ultimas_facturas
-        ]);
+        ];
+        
+        // Verificar si la empresa es responsable de IVA
+        $regimen = $empresa->regimen_tributario ?? 'no_responsable_iva';
+        
+        // Si la empresa es responsable de IVA, usar el formulario con IVA
+        if ($regimen === 'responsable_iva') {
+            return view('ventas.create_iva', $data);
+        } else {
+            return view('ventas.create', $data);
+        }
     }
 
     public function store(Request $request)
     {
         DB::beginTransaction();
         try {
-            Log::info('Iniciando venta electrónica', [
+            Log::info('Iniciando venta', [
                 'tipo_factura' => $request->tipo_factura,
                 'request' => $request->all()
             ]);
@@ -140,91 +255,215 @@ class VentaController extends Controller
                 'tipo_factura' => $request->tipo_factura,
                 'plantilla_factura' => $request->plantilla_factura,
                 'subtotal' => $request->subtotal,
-                'iva' => $request->tipo_factura === 'normal' ? $request->iva : 0,
+                'iva' => $request->iva, // Siempre guardar el IVA, independientemente del tipo de factura
                 'total' => $request->total,
                 'metodo_pago' => $request->metodo_pago ?? 'efectivo',
-                'fecha_venta' => now()
+                'pago' => $request->pago ?? 0,
+                'devuelta' => $request->devuelta ?? 0,
+                'fecha_venta' => now(),
+                'caja_id' => CajaDiaria::obtenerCajaAbierta()->id
             ]);
 
             // Procesar productos
             foreach ($request->productos as $producto) {
+                // Para servicios, usar el precio editado si está disponible
+                if (isset($producto['es_servicio']) && $producto['es_servicio'] == 1) {
+                    // Para servicios, usar el precio editado (precio_final si fue modificado, o precio original)
+                    $precio_unitario = isset($producto['precio_final']) ? $producto['precio_final'] : $producto['precio'];
+                    
+                    Log::info('Procesando servicio con precio editado', [
+                        'producto_id' => $producto['id'],
+                        'precio_original' => $producto['precio_original'] ?? 'No disponible',
+                        'precio_editado' => $precio_unitario,
+                        'es_servicio' => true
+                    ]);
+                } else {
+                    // Para productos físicos, usar precio_final si está disponible, de lo contrario usar precio
+                    $precio_unitario = isset($producto['precio_final']) ? $producto['precio_final'] : $producto['precio'];
+                }
+                
+                $subtotal = $producto['cantidad'] * $precio_unitario;
+                
+                // Obtener el producto para acceder a su IVA
+                $productoModel = Producto::find($producto['id']);
+                
+                // Usar el servicio de validación para obtener y validar el IVA
+                $porcentajeIva = IvaValidationService::obtenerPorcentajeIvaProducto($productoModel);
+                $tieneIva = $porcentajeIva > 0;
+                $valorIva = IvaValidationService::calcularValorIva($subtotal, $porcentajeIva);
+                
+                // Verificar si el cálculo es correcto
+                $verificacion = IvaValidationService::verificarCalculoIva($subtotal, $porcentajeIva, $valorIva);
+                
+                if (!$verificacion) {
+                    Log::warning('Cálculo de IVA incorrecto en venta, se ha recalculado', [
+                        'producto_id' => $productoModel->id,
+                        'nombre_producto' => $productoModel->nombre,
+                        'subtotal' => $subtotal,
+                        'porcentaje_iva' => $porcentajeIva
+                    ]);
+                }
+                
+                // Registrar información para auditoría
+                Log::info('Cálculo de IVA en detalle de venta', [
+                    'producto_id' => $productoModel->id,
+                    'producto_nombre' => $productoModel->nombre,
+                    'subtotal' => $subtotal,
+                    'tiene_iva' => $tieneIva,
+                    'porcentaje_iva' => $porcentajeIva,
+                    'valor_iva' => $valorIva,
+                    'total_con_iva' => $subtotal + $valorIva
+                ]);
+                
+                // Crear el detalle de venta con campos básicos
                 $detalle = $venta->detalles()->create([
                     'producto_id' => $producto['id'],
                     'cantidad' => $producto['cantidad'],
-                    'precio_unitario' => $producto['precio'],
-                    'subtotal' => $producto['cantidad'] * $producto['precio']
+                    'precio_unitario' => $precio_unitario,
+                    'subtotal' => $subtotal
                 ]);
-
-                // Actualizar stock
-                $productoModel = Producto::find($producto['id']);
-                $productoModel->stock -= $producto['cantidad'];
-                $productoModel->save();
-            }
-
-            if ($request->tipo_factura === 'electronica') {
-                // Preparar datos para el servicio Python
-                $items = $venta->detalles->map(function($detalle) {
-                    return [
-                        'id' => (string)$detalle->producto_id,
-                        'price' => (float)$detalle->precio_unitario,
-                        'quantity' => (int)$detalle->cantidad,
-                        'description' => $detalle->producto->nombre
-                    ];
-                })->toArray();
-
-                $alegraData = [
-                    'date' => $venta->fecha,
-                    'dueDate' => $venta->fecha,
-                    'client_id' => (string)$venta->cliente_id,
-                    'items' => $items
-                ];
-
-                Log::info('Enviando datos a servicio Python', [
-                    'alegra_data' => $alegraData
-                ]);
-
-                // Enviar a servicio Python
-                $response = Http::post('http://localhost:8000/invoices', $alegraData);
                 
-                Log::info('Respuesta del servicio Python', [
-                    'status' => $response->status(),
-                    'body' => $response->json()
+                // Registrar en el log para seguimiento
+                Log::info('Detalle de venta creado con IVA detallado', [
+                    'venta_id' => $venta->id,
+                    'detalle_id' => $detalle->id,
+                    'producto_id' => $producto['id'],
+                    'subtotal' => $subtotal,
+                    'tiene_iva' => $tieneIva,
+                    'porcentaje_iva' => $porcentajeIva,
+                    'valor_iva' => $valorIva,
+                    'total_con_iva' => $subtotal + $valorIva
                 ]);
 
-                if ($response->successful()) {
-                    $data = $response->json();
+                // Actualizar stock solo para productos físicos, no para servicios
+                if (!isset($producto['es_servicio']) || $producto['es_servicio'] != 1) {
+                    $productoModel->stock -= $producto['cantidad'];
+                    $productoModel->save();
                     
-                    // Actualizar venta con datos de Alegra
-                    $venta->update([
-                        'alegra_id' => $data['id'],
-                        'cufe' => $data['stamp']['cufe'] ?? null,
-                        'qr_code' => $data['stamp']['barCodeContent'] ?? null,
-                        'estado_dian' => $data['stamp']['legalStatus'] ?? null,
-                        'url_pdf' => $data['numberTemplate']['fullNumber'] ?? null
+                    Log::info('Stock actualizado para producto físico', [
+                        'producto_id' => $productoModel->id,
+                        'stock_anterior' => $productoModel->stock + $producto['cantidad'],
+                        'cantidad_vendida' => $producto['cantidad'],
+                        'stock_nuevo' => $productoModel->stock
                     ]);
-
-                    DB::commit();
-                    return response()->json([
-                        'success' => true,
-                        'message' => 'Venta y factura electrónica creadas correctamente',
-                        'data' => $venta
+                } else {
+                    Log::info('Stock no actualizado para servicio', [
+                        'producto_id' => $productoModel->id,
+                        'nombre' => $productoModel->nombre,
+                        'es_servicio' => true
                     ]);
                 }
-
-                DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error al crear factura electrónica',
-                    'error' => $response->json()
-                ], 400);
             }
 
-            // Si no es factura electrónica, continuar normal
+            // Registrar el movimiento en la caja
+            $caja = CajaDiaria::obtenerCajaAbierta();
+            if ($caja) {
+                MovimientoCaja::create([
+                    'caja_id' => $caja->id,
+                    'fecha' => now(),
+                    'tipo' => 'ingreso',
+                    'concepto' => 'Venta #' . $venta->numero_factura,
+                    'referencia_id' => $venta->id,
+                    'referencia_tipo' => 'App\\Models\\Venta',
+                    'monto' => $venta->total,
+                    'metodo_pago' => $venta->metodo_pago,
+                    'observaciones' => 'Venta registrada automáticamente',
+                    'created_by' => Auth::id(),
+                    'updated_by' => Auth::id(),
+                ]);
+            }
+
+            // Generar comprobante contable usando el nuevo servicio
+            try {
+                $contabilidadService = new ContabilidadService();
+                $comprobante = $contabilidadService->generarComprobanteVenta($venta);
+                
+                Log::info('Comprobante contable generado para venta', [
+                    'venta_id' => $venta->id,
+                    'comprobante_id' => $comprobante->id,
+                    'prefijo' => $comprobante->prefijo,
+                    'numero' => $comprobante->numero
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Error al generar comprobante contable para venta', [
+                    'venta_id' => $venta->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                // No revertimos la transacción, la venta se registra igual
+            }
+            
+            // Generar QR local si está activado en empresa y NO es factura electrónica (sin alegra_id)
+            try {
+                $empresa = \App\Models\Empresa::first();
+                
+                Log::info('Verificando QR local', [
+                    'venta_id' => $venta->id,
+                    'empresa_existe' => $empresa ? 'Sí' : 'No',
+                    'generar_qr_local' => $empresa ? ($empresa->generar_qr_local ? 'Sí' : 'No') : 'N/A',
+                    'alegra_id' => $venta->alegra_id ?? 'NULL'
+                ]);
+                
+                if ($empresa && $empresa->generar_qr_local && !$venta->alegra_id) {
+                    $qrService = new \App\Services\QRLocalService();
+                    $qrData = $qrService->generarCUFEyQR($venta, $empresa);
+                    
+                    // Asignar valores directamente y guardar
+                    $venta->cufe_local = $qrData['cufe'];
+                    $venta->qr_local = $qrData['qr'];
+                    $venta->save();
+                    
+                    Log::info('QR local generado para venta', [
+                        'venta_id' => $venta->id,
+                        'cufe_generado' => substr($qrData['cufe'], 0, 20) . '...',
+                        'qr_generado' => $qrData['qr'] ? 'Sí' : 'No',
+                        'qr_length' => $qrData['qr'] ? strlen($qrData['qr']) : 0
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::error('Error al generar QR local', [
+                    'venta_id' => $venta->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                // No revertimos la transacción, la venta se registra igual
+            }
+            
+            // Completar la venta normal primero
             DB::commit();
+            
+            // Si es factura electrónica, procesar en un paso separado
+            if ($request->tipo_factura === 'electronica' && $request->has('generar_fe')) {
+                try {
+                    return $this->generarFacturaElectronica($venta);
+                } catch (\Exception $e) {
+                    Log::error('Error al generar factura electrónica', [
+                        'venta_id' => $venta->id,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    
+                    // La venta ya se completó, solo devolvemos el error de FE
+                    return response()->json([
+                        'success' => true,
+                        'fe_success' => false,
+                        'message' => 'Venta creada correctamente, pero hubo un error al generar la factura electrónica',
+                        'error' => $e->getMessage(),
+                        'data' => $venta,
+                        'print_url' => route('ventas.print', $venta->id),
+                        'redirect_url' => route('ventas.create'),
+                        'show_url' => route('ventas.show', $venta->id)
+                    ]);
+                }
+            }
+
+            // Si no es factura electrónica o no se solicitó generarla, devolver éxito
             return response()->json([
                 'success' => true,
                 'message' => 'Venta creada correctamente',
-                'data' => $venta
+                'data' => $venta,
+                'print_url' => route('ventas.print', $venta->id),
+                'redirect_url' => route('ventas.create')
             ]);
 
         } catch (\Exception $e) {
@@ -242,34 +481,570 @@ class VentaController extends Controller
         }
     }
 
-    public function show(Venta $venta)
+    /**
+     * Genera la factura electrónica para una venta existente
+     */
+    public function generarFacturaElectronica(Venta $venta)
     {
-        $venta->load(['detalles.producto', 'cliente', 'usuario']);
+        try {
+            Log::info('Iniciando generación de factura electrónica', [
+                'venta_id' => $venta->id
+            ]);
+            
+            // Sincronizar cliente con Alegra si no tiene id_alegra
+            $cliente = Cliente::find($venta->cliente_id);
+            if (!$cliente->id_alegra) {
+                $resultadoSync = $cliente->syncToAlegra();
+                if (!$resultadoSync['success']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Error al sincronizar cliente con Alegra',
+                        'error' => isset($resultadoSync['error']) ? $resultadoSync['error'] : 'Error desconocido'
+                    ], 400);
+                }
+                
+                Log::info('Cliente sincronizado con Alegra', [
+                    'cliente_id' => $cliente->id,
+                    'id_alegra' => $cliente->id_alegra
+                ]);
+            }
+            
+            // Preparar items y sincronizar productos con Alegra
+            // Obtener solo los detalles con productos válidos
+            $detalles = $venta->detalles()->whereHas('producto')->get();
+            
+            // Array para agrupar detalles por producto_id y precio
+            $detallesAgrupados = [];
+            $productosLog = [];
+            $productosYaAgregados = []; // Registro de productos ya procesados para evitar duplicados
+            
+            // Primero, registramos todos los productos para depuración
+            foreach ($detalles as $detalle) {
+                $productoId = $detalle->producto_id;
+                $producto = $detalle->producto;
+                
+                // Registrar para depuración
+                $productosLog[] = [
+                    'id' => $productoId,
+                    'nombre' => $producto->nombre,
+                    'cantidad' => $detalle->cantidad,
+                    'precio' => $detalle->precio_unitario,
+                    'iva_producto' => null // IVA se maneja por régimen tributario
+                ];
+            }
+            
+            // Ahora agrupamos los detalles con una lógica más estricta
+            foreach ($detalles as $detalle) {
+                $productoId = $detalle->producto_id;
+                $producto = $detalle->producto;
+                $precioUnitario = (float)$detalle->precio_unitario;
+                
+                // Crear una clave única que combine producto_id y precio formateado para evitar problemas de precisión
+                $precioFormateado = number_format($precioUnitario, 2, '.', '');
+                $claveUnica = $productoId . '_' . $precioFormateado;
+                
+                // Verificar si ya existe este producto con este precio
+                if (!isset($detallesAgrupados[$claveUnica])) {
+                    $detallesAgrupados[$claveUnica] = [
+                        'producto' => $producto,
+                        'cantidad' => $detalle->cantidad,
+                        'precio_unitario' => $precioUnitario
+                    ];
+                    
+                    // Registrar que este producto+precio ya fue agregado
+                    $productosYaAgregados[$claveUnica] = true;
+                } else {
+                    // Sumar cantidades para el mismo producto con el mismo precio
+                    $detallesAgrupados[$claveUnica]['cantidad'] += $detalle->cantidad;
+                }
+            }
+            
+            // Registrar los productos encontrados para depuración
+            Log::info('Productos en la venta antes de agrupar', [
+                'venta_id' => $venta->id,
+                'productos' => $productosLog,
+                'total_productos' => count($productosLog)
+            ]);
+            
+            // Mantener el array asociativo para preservar las claves únicas y evitar duplicados
+            // NO convertir a array indexado para no perder las claves únicas
+            $detallesAgrupados = array_map(function($detalle) {
+                return [
+                    'producto' => $detalle['producto'],
+                    'cantidad' => $detalle['cantidad'],
+                    'precio_unitario' => $detalle['precio_unitario'],
+                    'iva' => 0 // IVA se calcula según régimen tributario
+                ];
+            }, $detallesAgrupados);
+            
+            Log::info('Detalles agrupados para Alegra', [
+                'venta_id' => $venta->id,
+                'total_agrupados' => count($detallesAgrupados),
+                'detalles_agrupados' => array_map(function($clave, $detalle) {
+                    return [
+                        'clave_unica' => $clave,
+                        'producto_id' => $detalle['producto']->id,
+                        'nombre' => $detalle['producto']->nombre,
+                        'cantidad' => $detalle['cantidad'],
+                        'precio' => $detalle['precio_unitario']
+                    ];
+                }, array_keys($detallesAgrupados), $detallesAgrupados)
+            ]);
+            
+            $items = [];
+            
+            // Procesar los detalles agrupados - Mantener las claves únicas
+            foreach ($detallesAgrupados as $claveUnica => $detalleAgrupado) {
+                $producto = $detalleAgrupado['producto'];
+                
+                // Verificar que el producto tenga un ID en Alegra
+                if (!$producto->id_alegra) {
+                    $resultadoSync = $producto->syncToAlegra();
+                    if (!$resultadoSync['success']) {
+                        Log::warning('Error al sincronizar producto con Alegra', [
+                            'producto_id' => $producto->id,
+                            'nombre_producto' => $producto->nombre,
+                            'error' => isset($resultadoSync['error']) ? $resultadoSync['error'] : 'Error desconocido'
+                        ]);
+                        // Continuamos con el siguiente producto
+                        continue;
+                    }
+                    
+                    Log::info('Producto sincronizado con Alegra', [
+                        'producto_id' => $producto->id,
+                        'nombre_producto' => $producto->nombre,
+                        'id_alegra' => $producto->id_alegra
+                    ]);
+                }
+                
+                // Obtener el precio con IVA del detalle agrupado
+                $precioConIVA = (float)$detalleAgrupado['precio_unitario'];
+                
+                // Obtener el IVA según el régimen tributario de la empresa
+                $empresa = \App\Models\Empresa::first();
+                $ivaProducto = 0; // Por defecto para no responsables de IVA
+                
+                // Solo aplicar IVA si la empresa es responsable de IVA
+                if ($empresa && $empresa->esResponsableIva()) {
+                    $ivaProducto = 19.0; // 19% para responsables de IVA
+                    
+                    // Si el producto tiene un valor_iva específico, usarlo
+                    if ($producto->valor_iva && $producto->valor_iva > 0) {
+                        // Calcular porcentaje desde valor_iva si está disponible
+                        $precioSinIva = $producto->precio_venta - $producto->valor_iva;
+                        if ($precioSinIva > 0) {
+                            $ivaProducto = ($producto->valor_iva / $precioSinIva) * 100;
+                        }
+                    }
+                }
+                
+                Log::info('IVA calculado según régimen tributario', [
+                    'producto_id' => $producto->id,
+                    'nombre_producto' => $producto->nombre,
+                    'regimen_tributario' => $empresa->regimen_tributario ?? 'no_definido',
+                    'iva_aplicado' => $ivaProducto
+                ]);
+                
+                // Calcular precio sin IVA para Alegra (como lo espera Alegra)
+                $precioConIVA = (float)$detalleAgrupado['precio_unitario'];
+                $ivaRedondeado = round($ivaProducto, 0); // Redondear a entero para evitar problemas con decimales
+                
+                // Verificar si es un servicio para logging especial
+                $esServicio = $this->esServicioPorNombre($producto->nombre);
+                if ($esServicio) {
+                    Log::info('Enviando servicio con precio editado a Alegra', [
+                        'producto_id' => $producto->id,
+                        'nombre' => $producto->nombre,
+                        'precio_con_iva' => $precioConIVA,
+                        'precio_original_producto' => $producto->precio_venta,
+                        'es_servicio' => true,
+                        'precio_fue_editado' => $precioConIVA != $producto->precio_final,
+                        'regimen_iva' => $empresa->regimen_tributario ?? 'no_definido'
+                    ]);
+                }
+                
+                // Calcular el precio sin IVA según el régimen
+                if ($empresa && $empresa->esResponsableIva() && $ivaProducto > 0) {
+                    // Para responsables de IVA: dividir por (1 + IVA/100)
+                    $precioSinIVA = round($precioConIVA / (1 + ($ivaProducto/100)), 2);
+                } else {
+                    // Para no responsables de IVA: el precio ya está sin IVA
+                    $precioSinIVA = $precioConIVA;
+                }
+                
+                // Crear el item con precio SIN IVA como lo espera Alegra
+                $itemData = [
+                    'id' => (int)$producto->id_alegra,
+                    'price' => $precioSinIVA, // Precio SIN IVA para Alegra
+                    'quantity' => (float)$detalleAgrupado['cantidad']
+                ];
+                
+                // Solo agregar impuestos si la empresa es responsable de IVA
+                if ($empresa && $empresa->esResponsableIva() && $ivaProducto > 0) {
+                    // Calcular el valor del IVA para este ítem
+                    $valorIVA = round($precioSinIVA * $detalleAgrupado['cantidad'] * ($ivaRedondeado/100), 2);
+                    
+                    // Añadir impuestos de tres formas diferentes para asegurar compatibilidad con Alegra
+                    $itemData['taxes'] = [
+                        [
+                            'id' => 1, // ID estándar del IVA en Alegra
+                            'percentage' => (float)$ivaRedondeado,
+                            'value' => $valorIVA
+                        ]
+                    ];
+                    
+                    // También añadir el campo tax (singular) que algunas versiones de Alegra usan
+                    $itemData['tax'] = [
+                        [
+                            'id' => 1,
+                            'percentage' => (float)$ivaRedondeado,
+                            'value' => $valorIVA
+                        ]
+                    ];
+                    
+                    // Añadir el campo taxRate para mayor compatibilidad
+                    $itemData['taxRate'] = (float)$ivaRedondeado;
+                } else {
+                    // Para no responsables de IVA, no agregar impuestos
+                    $valorIVA = 0;
+                    $itemData['taxes'] = [];
+                    $itemData['tax'] = [];
+                    $itemData['taxRate'] = 0;
+                }
+                
+                // Registrar en log para depuración
+                Log::info('Añadiendo producto a factura Alegra', [
+                    'producto_id' => $producto->id,
+                    'nombre_producto' => $producto->nombre,
+                    'clave_unica' => $claveUnica,
+                    'iva_porcentaje' => (float)$ivaProducto,
+                    'precio_con_iva' => $precioConIVA,
+                    'precio_sin_iva' => $precioSinIVA,
+                    'cantidad' => (float)$detalleAgrupado['cantidad'],
+                    'item_data' => $itemData
+                ]);
+                
+                $items[] = $itemData;
+            }
+            
+            if (empty($items)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay productos válidos para generar la factura electrónica'
+                ], 400);
+            }
+
+            // Obtener la plantilla de factura electrónica
+            $plantillaId = $venta->plantilla_factura ?: 19; // Usar la plantilla por defecto si no se especifica
+
+            // Calcular totales de impuestos para la factura completa
+            $totalImpuestos = [];
+            $totalIVA = 0;
+            
+            foreach ($items as $item) {
+                if (isset($item['taxes']) && !empty($item['taxes'])) {
+                    foreach ($item['taxes'] as $tax) {
+                        if ($tax['id'] == 1) { // IVA
+                            $totalIVA += isset($tax['value']) ? $tax['value'] : ($item['price'] * $item['quantity'] * ($tax['percentage']/100));
+                        }
+                    }
+                }
+            }
+            
+            // Preparar datos para la factura electrónica
+            $alegraData = [
+                'client' => [
+                    'id' => (int)$cliente->id_alegra
+                ],
+                'items' => $items,
+                'date' => date('Y-m-d', strtotime($venta->fecha_venta)),
+                'dueDate' => date('Y-m-d', strtotime($venta->fecha_venta)),
+                'paymentForm' => 'CASH',
+                'paymentMethod' => 'CASH',
+                'payment' => [
+                    'paymentMethod' => ['id' => 10],  // 10 = Efectivo según DIAN
+                    'account' => ['id' => 1]          // Cuenta por defecto
+                ],
+                'numberTemplate' => [
+                    'id' => (int)$plantillaId
+                ],
+                // Añadir información de impuestos a nivel de factura
+                'totalTaxes' => [
+                    [
+                        'id' => 1,
+                        'name' => 'IVA',
+                        'percentage' => 19,
+                        'amount' => round($totalIVA, 2)
+                    ]
+                ],
+                // Incluir el subtotal, IVA y total para mayor claridad
+                'subtotal' => round($venta->subtotal, 2),
+                'total' => round($venta->total, 2),
+                'tax' => round($venta->iva, 2)
+            ];
+
+            Log::info('Preparando datos para Alegra', [
+                'alegra_data' => $alegraData
+            ]);
+
+            Log::info('Preparando para enviar factura a Alegra usando AlegraService');
+            
+            // Usar el servicio AlegraService para crear la factura
+            $alegraService = app(\App\Http\Services\AlegraService::class);
+            
+            // Enviar la solicitud a Alegra directamente
+            $result = $alegraService->crearFactura($alegraData);
+            
+            Log::info('Respuesta de Alegra recibida', [
+                'success' => $result['success'],
+                'data' => isset($result['data']) ? json_encode($result['data']) : null,
+                'error' => $result['error'] ?? null
+            ]);
+            
+            // Formatear la respuesta para mantener compatibilidad con el código existente
+            $response = [
+                'success' => $result['success'],
+                'data' => $result['data'] ?? null,
+                'error' => $result['error'] ?? null
+            ];
+            
+            Log::info('Procesando respuesta de Alegra', [
+                'response' => $response
+            ]);
+
+            if (isset($response['success']) && $response['success']) {
+                $data = $response['data'];
+                
+                // Actualizar venta con datos de Alegra
+                $venta->update([
+                    'alegra_id' => $data['id'],
+                    'numero_factura_alegra' => $data['numberTemplate']['fullNumber'] ?? ($data['numberTemplate']['prefix'] ?? '') . ($data['numberTemplate']['formattedNumber'] ?? '') ?? null,
+                    'url_pdf_alegra' => isset($data['pdfUrl']) ? $data['pdfUrl'] : null,
+                    'cufe' => isset($data['stamp']) ? ($data['stamp']['cufe'] ?? null) : null,
+                    'qr_code' => isset($data['stamp']) ? ($data['stamp']['barCodeContent'] ?? null) : null,
+                    'estado_dian' => isset($data['stamp']) ? ($data['stamp']['legalStatus'] ?? null) : null
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'fe_success' => true,
+                    'message' => 'Venta y factura electrónica creadas correctamente',
+                    'data' => $venta,
+                    'print_url' => route('ventas.print', $venta->id),
+                    'redirect_url' => route('ventas.create'),
+                    'show_url' => route('ventas.show', $venta->id)
+                ]);
+            }
+
+            // Determinar un mensaje de error más específico
+            $errorMessage = 'Error al generar la factura electrónica';
+            $errorDetail = isset($response['error']) ? $response['error'] : 'Error desconocido';
+            
+            // Analizar el tipo de error para dar mensajes más específicos
+            if (isset($response['data']) && is_array($response['data'])) {
+                if (isset($response['data']['message'])) {
+                    $errorDetail = $response['data']['message'];
+                }
+                
+                // Detectar errores comunes de Alegra
+                if (strpos($errorDetail, 'authentication') !== false) {
+                    $errorMessage = 'Error de autenticación con Alegra. Verifique sus credenciales.';
+                } elseif (strpos($errorDetail, 'client') !== false) {
+                    $errorMessage = 'Error con los datos del cliente en Alegra.';
+                } elseif (strpos($errorDetail, 'item') !== false || strpos($errorDetail, 'product') !== false) {
+                    $errorMessage = 'Error con los productos en Alegra.';
+                }
+            }
+            
+            Log::warning('Error en factura electrónica', [
+                'mensaje' => $errorMessage,
+                'detalle' => $errorDetail,
+                'venta_id' => $venta->id
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'fe_success' => false,
+                'message' => 'Venta creada correctamente, pero hubo un error al generar la factura electrónica',
+                'error_message' => $errorMessage,
+                'error_detail' => $errorDetail,
+                'data' => $venta,
+                'print_url' => route('ventas.print', $venta->id),
+                'redirect_url' => route('ventas.create'),
+                'show_url' => route('ventas.show', $venta->id)
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error al generar factura electrónica', [
+                'venta_id' => $venta->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            throw $e;
+        }
+    }
+    
+    /**
+     * Emitir una factura electrónica a la DIAN para una venta
+     * 
+     * @param Request $request
+     * @param int $id ID de la venta
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function emitirFacturaElectronicaDIAN(Request $request, $id)
+    {
+        try {
+            // Obtener la venta
+            $venta = Venta::with(['detalles.producto', 'cliente', 'usuario'])->findOrFail($id);
+            
+            // Verificar que la venta tenga una factura en Alegra
+            if (!$venta->id_factura_alegra) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta venta no tiene una factura en Alegra. Primero debe generar la factura.'
+                ], 400);
+            }
+            
+            // Instanciar el servicio de Alegra
+            $alegraService = new \App\Http\Services\AlegraService();
+            
+            // Emitir la factura electrónica a la DIAN
+            $resultado = $alegraService->emitirFacturaElectronica($venta->id_factura_alegra);
+            
+            if ($resultado['success']) {
+                // Actualizar el estado de la factura electrónica en la venta
+                $venta->estado_fe = 'enviada_dian';
+                $venta->fecha_envio_dian = now();
+                $venta->save();
+                
+                Log::info('Factura electrónica emitida correctamente a la DIAN', [
+                    'venta_id' => $venta->id,
+                    'factura_alegra_id' => $venta->id_factura_alegra,
+                    'resultado' => $resultado
+                ]);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Factura electrónica emitida correctamente a la DIAN',
+                    'data' => $resultado['data'] ?? null
+                ]);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => $resultado['mensaje'] ?? 'Error al emitir factura electrónica a la DIAN',
+                'error' => $resultado['error'] ?? 'Error desconocido'
+            ], 400);
+            
+        } catch (\Exception $e) {
+            Log::error('Error al emitir factura electrónica a la DIAN', [
+                'venta_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al emitir factura electrónica a la DIAN',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Verificar el estado de una factura electrónica en la DIAN
+     * 
+     * @param Request $request
+     * @param int $id ID de la venta
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function verificarEstadoFacturaElectronicaDIAN(Request $request, $id)
+    {
+        try {
+            // Obtener la venta
+            $venta = Venta::findOrFail($id);
+            
+            // Verificar que la venta tenga una factura en Alegra
+            if (!$venta->id_factura_alegra) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta venta no tiene una factura en Alegra.'
+                ], 400);
+            }
+            
+            // Instanciar el servicio de Alegra
+            $alegraService = new \App\Http\Services\AlegraService();
+            
+            // Verificar el estado de la factura electrónica en la DIAN
+            $resultado = $alegraService->verificarEstadoFacturaElectronica($venta->id_factura_alegra);
+            
+            if ($resultado['success']) {
+                // Actualizar el estado de la factura electrónica en la venta si es necesario
+                if (isset($resultado['estado']) && $resultado['estado'] !== $venta->estado_fe) {
+                    $venta->estado_fe = $resultado['estado'];
+                    $venta->save();
+                    
+                    Log::info('Estado de factura electrónica actualizado', [
+                        'venta_id' => $venta->id,
+                        'factura_alegra_id' => $venta->id_factura_alegra,
+                        'estado_anterior' => $venta->estado_fe,
+                        'estado_nuevo' => $resultado['estado']
+                    ]);
+                }
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Estado de factura electrónica obtenido correctamente',
+                    'estado' => $resultado['estado'],
+                    'data' => $resultado['factura'] ?? null
+                ]);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => $resultado['mensaje'] ?? 'Error al verificar estado de factura electrónica',
+                'error' => $resultado['error'] ?? 'Error desconocido'
+            ], 400);
+            
+        } catch (\Exception $e) {
+            Log::error('Error al verificar estado de factura electrónica', [
+                'venta_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al verificar estado de factura electrónica',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    public function show($id)
+    {
+        $venta = Venta::with(['detalles.producto', 'cliente', 'usuario'])->findOrFail($id);
         
         // Cargar el stock por ubicación para cada producto
+        $stockPorProducto = [];
         foreach ($venta->detalles as $detalle) {
-            $detalle->producto->stockPorUbicacion = StockUbicacion::stockPorUbicacion($detalle->producto_id);
+            $stockPorProducto[$detalle->producto_id] = StockUbicacion::stockPorUbicacion($detalle->producto_id);
         }
         
-        return view('ventas.show', compact('venta'));
-    }
-
-    public function print($id)
-    {
-        $venta = Venta::with(['detalles.producto', 'cliente'])->findOrFail($id);
-        $empresa = Empresa::first();
-        return view('ventas.print', compact('venta', 'empresa'));
+        return view('ventas.show', compact('venta', 'stockPorProducto'));
     }
 
     public function enviarADian(Venta $venta)
     {
         try {
-            if (!$venta->alegra_id) {
+            if (!$venta->id_factura_alegra) {
                 return back()->with('error', 'La venta no tiene factura en Alegra');
             }
 
             $alegraService = app(AlegraService::class);
-            $response = $alegraService->generarFacturaElectronica($venta);
+            // Usar el nuevo método que cambia el estado de la factura antes de enviarla a la DIAN
+            $response = $alegraService->emitirFacturaElectronica($venta->id_factura_alegra);
             
             if ($response['success']) {
                 return back()->with('success', 'Factura enviada a la DIAN exitosamente');
@@ -282,6 +1057,78 @@ class VentaController extends Controller
                 'error' => $e->getMessage()
             ]);
             return back()->with('error', 'Error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Emitir factura electrónica desde la interfaz de ventas
+     */
+    public function emitirFacturaElectronica(Venta $venta)
+    {
+        try {
+            // Verificar que la venta no tenga ya una factura electrónica
+            if ($venta->alegra_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta venta ya tiene una factura electrónica emitida'
+                ]);
+            }
+
+            // Inicializar servicio de Alegra
+            $alegraService = new \App\Services\AlegraService();
+            
+            // Usar el método completo de procesamiento de factura electrónica
+            $datosFactura = $venta->prepararFacturaAlegra();
+            $resultado = $alegraService->procesarFacturaElectronica($datosFactura);
+            
+            if ($resultado['success']) {
+                // Actualizar la venta con los datos de la factura electrónica
+                $venta->update([
+                    'alegra_id' => $resultado['id_factura'],
+                    'numero_factura_electronica' => $resultado['numero_factura_electronica'] ?? null,
+                    'cufe' => $resultado['cufe'] ?? null,
+                    'estado_dian' => $resultado['estado_dian'] ?? 'procesando',
+                    'qr_code' => $resultado['qr_code'] ?? null
+                ]);
+
+                Log::info('Factura electrónica emitida exitosamente', [
+                    'venta_id' => $venta->id,
+                    'alegra_id' => $resultado['id_factura'],
+                    'cufe' => $resultado['cufe'] ?? null
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Factura electrónica emitida exitosamente',
+                    'alegra_id' => $resultado['id_factura'],
+                    'numero_factura_electronica' => $resultado['numero_factura_electronica'] ?? null,
+                    'cufe' => $resultado['cufe'] ?? null,
+                    'estado_dian' => $resultado['estado_dian'] ?? 'procesando'
+                ]);
+            } else {
+                Log::error('Error al emitir factura electrónica', [
+                    'venta_id' => $venta->id,
+                    'error' => $resultado['message'],
+                    'etapa' => $resultado['etapa'] ?? 'desconocida'
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $resultado['message'],
+                    'etapa' => $resultado['etapa'] ?? 'desconocida'
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Excepción al emitir factura electrónica', [
+                'venta_id' => $venta->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error interno: ' . $e->getMessage()
+            ]);
         }
     }
 }

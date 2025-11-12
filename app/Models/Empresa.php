@@ -16,15 +16,30 @@ class Empresa extends Model
         'email',
         'sitio_web',
         'logo',
+        'formato_impresion',
+        'generar_qr_local',
         'regimen_tributario',
         'resolucion_facturacion',
         'fecha_resolucion',
-        'factura_electronica_habilitada'
+        'fecha_vencimiento_resolucion',
+        'factura_electronica_habilitada',
+        'alegra_email',
+        'alegra_token',
+        'alegra_multiples_impuestos',
+        'prefijo_factura',
+        'id_resolucion_alegra'
     ];
 
     protected $casts = [
         'fecha_resolucion' => 'date',
-        'factura_electronica_habilitada' => 'boolean'
+        'fecha_vencimiento_resolucion' => 'date',
+        'factura_electronica_habilitada' => 'boolean',
+        'alegra_multiples_impuestos' => 'boolean',
+        'generar_qr_local' => 'boolean'
+    ];
+
+    protected $hidden = [
+        'alegra_token',
     ];
 
     // Constantes para los regímenes tributarios

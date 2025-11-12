@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Factura #{{ $venta->numero_factura }}</title>
+    <title>Factura #{{ $venta->getNumeroFacturaMostrar() }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -26,10 +26,14 @@
             margin-bottom: 2mm;
         }
         .header h2 {
-            margin: 0;
-            font-size: 16px;
+            margin: 0 0 1mm 0;
+            font-size: 18px;
             font-weight: bold;
-            padding: 2mm;
+        }
+        .header p {
+            margin: 0.5mm 0;
+            line-height: 1.3;
+            font-weight: bold;
         }
         .info p {
             margin: 2mm 0;
@@ -88,37 +92,52 @@
 
     <div class="ticket">
         <div class="header">
-        @if(isset($empresa) && $empresa->logo)
-        <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo de la empresa" style="max-width: 200px;">
-    @endif
+            @if(isset($empresa) && $empresa->logo)
+                <img src="{{ asset('storage/' . $empresa->logo) }}" alt="Logo de la empresa" style="max-width: 200px; margin-bottom: 2mm;">
+            @endif
             
             @if(isset($empresa))
                 <h2>{{ $empresa->nombre_comercial }}</h2>
-                @if($empresa->razon_social)
-                    <p>{{ $empresa->razon_social }}</p>
-                @endif
-                @if($empresa->nit)
-                    <p>NIT: {{ $empresa->nit }}</p>
-                @endif
-                @if($empresa->direccion)
-                    <p>{{ $empresa->direccion }}</p>
-                @endif
-                @if($empresa->telefono)
-                    <p>Tel: {{ $empresa->telefono }}</p>
-                @endif
-                @if($empresa->email)
-                    <p>Email: {{ $empresa->email }}</p>
-                @endif
-                @if($empresa->regimen_tributario)
-                    <p>Régimen: {{ ucfirst($empresa->regimen_tributario) }}</p>
-                @endif
+                <p style="font-size: 13px; font-weight: bold;">
+                    @if($empresa->razon_social)
+                        {{ $empresa->razon_social }}<br>
+                    @endif
+                    @if($empresa->nit)
+                        NIT: {{ $empresa->nit }}<br>
+                    @endif
+                    @if($empresa->direccion)
+                        {{ $empresa->direccion }}<br>
+                    @endif
+                    @if($empresa->telefono)
+                        Tel: {{ $empresa->telefono }}
+                        @if($empresa->email)
+                            - Email: {{ $empresa->email }}<br>
+                        @else
+                            <br>
+                        @endif
+                    @elseif($empresa->email)
+                        Email: {{ $empresa->email }}<br>
+                    @endif
+                    @if($empresa->regimen_tributario)
+                        {{ ucfirst(str_replace('_', ' ', $empresa->regimen_tributario)) }}
+                    @endif
+                </p>
             @endif
         </div>
 
         <div class="divider"></div>
 
         <div class="info">
-            <p>Factura No: {{ $venta->numero_factura }}</p>
+            <p><strong>Factura No: {{ $venta->getNumeroFacturaMostrar() }}</strong></p>
+            @if($venta->esFacturaElectronica())
+                <p><small>Factura Electrónica - Alegra ID: {{ $venta->alegra_id }}</small></p>
+                @if($venta->cufe)
+                    <p><small>CUFE: {{ substr($venta->cufe, 0, 20) }}...</small></p>
+                @endif
+                @if($venta->estado_dian)
+                    <p><small>Estado DIAN: {{ ucfirst($venta->estado_dian) }}</small></p>
+                @endif
+            @endif
             <p>Fecha: {{ $venta->fecha_venta->format('d/m/Y h:i A') }}</p>
             @if($venta->cliente)
                 <p>Cliente: {{ $venta->cliente->nombres }} {{ $venta->cliente->apellidos }}</p>
@@ -140,17 +159,21 @@
             <th>CÓD</th>
             <th>PROD</th>
             <th class="text-center">CANT</th>
-            <th class="text-right">VALOR</th>
+            <th class="text-right">PRECIO</th>
+            <th class="text-right">TOTAL</th>
         </tr>
     </thead>
     <tbody>
         @foreach($venta->detalles as $detalle)
+            @if($detalle->producto)
             <tr>
-                <td>{{ $detalle->producto->codigo ?? 'N/A' }}</td>
-                <td>{{ $detalle->producto->nombre ?? 'Producto no disponible' }}</td>
+                <td>{{ $detalle->producto->codigo }}</td>
+                <td>{{ $detalle->producto->nombre }}</td>
                 <td class="text-center">{{ $detalle->cantidad }}</td>
+                <td class="text-right">${{ number_format($detalle->precio_unitario, 2, ',', '.') }}</td>
                 <td class="text-right">${{ number_format($detalle->subtotal, 2, ',', '.') }}</td>
             </tr>
+            @endif
         @endforeach
     </tbody>
 </table>
@@ -172,8 +195,38 @@
 
         <div class="divider"></div>
 
+        @if($venta->qr_code || $venta->qr_local)
+            <div class="text-center" style="margin: 5mm 0;">
+                @if($venta->qr_code)
+                    <p><small><strong>Código QR DIAN (Factura Electrónica)</strong></small></p>
+                    <img src="data:image/png;base64,{{ $venta->qr_code }}" 
+                         alt="QR DIAN" 
+                         style="width: 40mm; height: 40mm; margin: 2mm auto;">
+                    @if($venta->cufe)
+                        <div style="font-family: monospace; font-size: 10px; font-weight: bold; word-break: break-all; max-width: 60mm; margin: 2mm auto;">
+                            CUFE: {{ $venta->cufe }}
+                        </div>
+                    @endif
+                @elseif($venta->qr_local)
+                    <p><small><strong>Código QR de Verificación</strong></small></p>
+                    <img src="data:image/png;base64,{{ $venta->qr_local }}" 
+                         alt="QR Local" 
+                         style="width: 40mm; height: 40mm; margin: 2mm auto;">
+                    @if($venta->cufe_local)
+                        <div style="font-family: monospace; font-size: 10px; font-weight: bold; word-break: break-all; max-width: 60mm; margin: 2mm auto;">
+                            CUFE: {{ $venta->cufe_local }}
+                        </div>
+                    @endif
+                @endif
+            </div>
+            <div class="divider"></div>
+        @endif
+
         <div class="footer">
             <p>¡GRACIAS POR SU COMPRA!</p>
+            @if($venta->esFacturaElectronica())
+                <p><small>Factura Electrónica Válida ante la DIAN</small></p>
+            @endif
             @if(isset($empresa))
                 <p>{{ $empresa->nombre_comercial }}</p>
                 @if($empresa->direccion && $empresa->telefono)

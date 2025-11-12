@@ -1,0 +1,2 @@
+# Migraciones específicas para cada tenant
+# Estas migraciones se ejecutan en la base de datos de cada empresa

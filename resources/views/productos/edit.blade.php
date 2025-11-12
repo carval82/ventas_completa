@@ -61,34 +61,67 @@
 
                             <div class="col-12">
                                 <div class="mb-3">
-                                    <label class="form-label">Descripción</label>
+                                    <label class="form-label">Descripción <small class="text-muted">(opcional)</small></label>
                                     <textarea class="form-control @error('descripcion') is-invalid @enderror" 
-                                              name="descripcion" rows="3">{{ old('descripcion', $producto->descripcion) }}</textarea>
+                                              name="descripcion" rows="3" placeholder="Descripción del producto (opcional)">{{ old('descripcion', $producto->descripcion) }}</textarea>
                                     @error('descripcion')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-2">
                                 <div class="mb-3">
                                     <label class="form-label">Precio Compra</label>
                                     <input type="number" step="0.01" class="form-control @error('precio_compra') is-invalid @enderror" 
-                                           name="precio_compra" value="{{ old('precio_compra', $producto->precio_compra) }}" required>
+                                           name="precio_compra" id="precio_compra" value="{{ old('precio_compra', $producto->precio_compra) }}" required onchange="calcularGanancia()">
                                     @error('precio_compra')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
-
-                            <div class="col-md-6">
+                            
+                            <div class="col-md-2">
                                 <div class="mb-3">
-                                    <label class="form-label">Precio Venta</label>
+                                    <label class="form-label">Precio Final (con IVA)</label>
+                                    <input type="number" step="0.01" class="form-control" 
+                                           id="precio_final" name="precio_final" value="{{ old('precio_final', $producto->precio_final) }}" required onchange="calcularPrecioSinIVA()">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <div class="mb-3">
+                                    <label class="form-label">IVA (%)</label>
+                                    <input type="number" step="0.01" class="form-control @error('iva') is-invalid @enderror" 
+                                           name="iva" id="iva" value="{{ old('iva', $producto->iva) }}" required onchange="calcularPrecioSinIVA()">
+                                    @error('iva')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <div class="mb-3">
+                                    <label class="form-label">Precio Venta (sin IVA)</label>
                                     <input type="number" step="0.01" class="form-control @error('precio_venta') is-invalid @enderror" 
-                                           name="precio_venta" value="{{ old('precio_venta', $producto->precio_venta) }}" required>
+                                           name="precio_venta" id="precio_venta" value="{{ old('precio_venta', $producto->precio_venta) }}" readonly>
                                     @error('precio_venta')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <div class="mb-3">
+                                    <label class="form-label">Valor IVA</label>
+                                    <input type="text" class="form-control" name="valor_iva" id="valor_iva" value="{{ old('valor_iva', $producto->valor_iva) }}" readonly>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <div class="mb-3">
+                                    <label class="form-label">% Ganancia</label>
+                                    <input type="number" step="0.01" class="form-control" name="porcentaje_ganancia" id="porcentaje_ganancia" value="{{ old('porcentaje_ganancia', $producto->porcentaje_ganancia) }}" readonly>
                                 </div>
                             </div>
 
@@ -119,12 +152,89 @@
                                     <label class="form-label">Estado</label>
                                     <select class="form-select @error('estado') is-invalid @enderror" name="estado">
                                         <option value="1" {{ old('estado', $producto->estado) ? 'selected' : '' }}>Activo</option>
-                                        <option value="0" {{ !old('estado', $producto->estado) ? 'selected' : '' }}>Inactivo</option>
+                                        <option value="0" {{ old('estado', $producto->estado) ? '' : 'selected' }}>Inactivo</option>
                                     </select>
                                     @error('estado')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Unidad de Medida</label>
+                                    <select name="unidad_medida" class="form-control @error('unidad_medida') is-invalid @enderror">
+                                        <option value="unit" {{ old('unidad_medida', $producto->unidad_medida) == 'unit' ? 'selected' : '' }}>Unidad</option>
+                                        <option value="kg" {{ old('unidad_medida', $producto->unidad_medida) == 'kg' ? 'selected' : '' }}>Kilogramo</option>
+                                        <option value="g" {{ old('unidad_medida', $producto->unidad_medida) == 'g' ? 'selected' : '' }}>Gramo</option>
+                                        <option value="lb" {{ old('unidad_medida', $producto->unidad_medida) == 'lb' ? 'selected' : '' }}>Libra</option>
+                                        <option value="oz" {{ old('unidad_medida', $producto->unidad_medida) == 'oz' ? 'selected' : '' }}>Onza</option>
+                                        <option value="l" {{ old('unidad_medida', $producto->unidad_medida) == 'l' ? 'selected' : '' }}>Litro</option>
+                                        <option value="ml" {{ old('unidad_medida', $producto->unidad_medida) == 'ml' ? 'selected' : '' }}>Mililitro</option>
+                                        <option value="m" {{ old('unidad_medida', $producto->unidad_medida) == 'm' ? 'selected' : '' }}>Metro</option>
+                                        <option value="cm" {{ old('unidad_medida', $producto->unidad_medida) == 'cm' ? 'selected' : '' }}>Centímetro</option>
+                                        <option value="box" {{ old('unidad_medida', $producto->unidad_medida) == 'box' ? 'selected' : '' }}>Caja</option>
+                                        <option value="pack" {{ old('unidad_medida', $producto->unidad_medida) == 'pack' ? 'selected' : '' }}>Paquete</option>
+                                        <option value="service" {{ old('unidad_medida', $producto->unidad_medida) == 'service' ? 'selected' : '' }}>Servicio</option>
+                                    </select>
+                                    @error('unidad_medida')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <small class="form-text text-muted">Requerido para la integración con Alegra</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Códigos Relacionados -->
+                        <div class="card mt-4 mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Códigos Relacionados (Opcional)</h5>
+                                <small class="text-muted">Agregue códigos adicionales para este producto (ej: diferentes sabores, presentaciones, etc.)</small>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-info-circle"></i> Los códigos relacionados permiten que al escanear cualquiera de estos códigos, 
+                                            se seleccione automáticamente este producto. Útil para productos con diferentes presentaciones o sabores.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered" id="tabla-codigos-relacionados">
+                                        <thead>
+                                            <tr>
+                                                <th>Código</th>
+                                                <th>Descripción (opcional)</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($codigosRelacionados as $codigo)
+                                            <tr id="codigo-row-{{ $loop->index }}">
+                                                <td>
+                                                    <input type="hidden" name="codigos_relacionados[{{ $loop->index }}][id]" value="{{ $codigo->id }}">
+                                                    <input type="text" name="codigos_relacionados[{{ $loop->index }}][codigo]" 
+                                                           class="form-control" placeholder="Código" value="{{ $codigo->codigo }}" required>
+                                                </td>
+                                                <td>
+                                                    <input type="text" name="codigos_relacionados[{{ $loop->index }}][descripcion]" 
+                                                           class="form-control" placeholder="Ej: Sabor Fresa, Tamaño Grande, etc." value="{{ $codigo->descripcion }}">
+                                                </td>
+                                                <td class="text-center">
+                                                    <button type="button" class="btn btn-danger btn-sm" 
+                                                            onclick="eliminarCodigoRow({{ $loop->index }})">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <button type="button" class="btn btn-success" id="btn-agregar-codigo">
+                                    <i class="fas fa-plus"></i> Agregar Código Relacionado
+                                </button>
                             </div>
                         </div>
 
@@ -237,12 +347,131 @@
 
 @push('scripts')
 <script>
-// Actualizar código del proveedor cuando cambie la selección
-document.getElementById('proveedor_id').addEventListener('change', function() {
-    const selectedOption = this.options[this.selectedIndex];
-    const codigo = selectedOption.dataset.codigo;
-    document.getElementById('codigo_proveedor').value = codigo || '';
-});
+    // Actualizar código del proveedor cuando cambie la selección
+    document.getElementById('proveedor_id').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const codigo = selectedOption.dataset.codigo;
+        document.getElementById('codigo_proveedor').value = codigo || '';
+    });
+
+    // Agregar fila de código relacionado
+    document.getElementById('btn-agregar-codigo').addEventListener('click', function() {
+        const tabla = document.getElementById('tabla-codigos-relacionados');
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+            <td>
+                <input type="text" name="codigos_relacionados[][codigo]" class="form-control" placeholder="Código" required>
+            </td>
+            <td>
+                <input type="text" name="codigos_relacionados[][descripcion]" class="form-control" placeholder="Ej: Sabor Fresa, Tamaño Grande, etc.">
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-danger btn-sm" onclick="eliminarCodigoRow(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tabla.tBodies[0].appendChild(fila);
+    });
+    
+    // Eliminar fila de código relacionado
+    function eliminarCodigoRow(element) {
+        const fila = element.parentNode.parentNode;
+        fila.parentNode.removeChild(fila);
+    }
+    
+    // Variables para almacenar los valores originales
+    let precioCompraOriginal = 0;
+    let precioFinalOriginal = 0;
+    let ivaPorcentajeOriginal = 0;
+    
+    // Función para calcular el precio sin IVA a partir del precio final con IVA
+    function calcularPrecioSinIVA() {
+        const precioFinal = parseFloat(document.getElementById('precio_final').value);
+        const ivaPorcentaje = parseFloat(document.getElementById('iva').value);
+        
+        if (precioFinal > 0 && !isNaN(ivaPorcentaje)) {
+            // Calculamos el precio sin IVA: PrecioFinal / (1 + IVA%/100)
+            const precioSinIVA = precioFinal / (1 + (ivaPorcentaje / 100));
+            document.getElementById('precio_venta').value = precioSinIVA.toFixed(2);
+            
+            // Calculamos el valor del IVA
+            const valorIVA = precioFinal - precioSinIVA;
+            document.getElementById('valor_iva').value = valorIVA.toFixed(2);
+            
+            // Calculamos el porcentaje de ganancia
+            calcularGanancia();
+        }
+    }
+    
+    // Función para calcular el porcentaje de ganancia basado en precio compra y precio final con IVA
+    function calcularGanancia() {
+        const precioCompra = parseFloat(document.getElementById('precio_compra').value);
+        const precioFinal = parseFloat(document.getElementById('precio_final').value);
+        
+        if (precioCompra > 0 && precioFinal > 0) {
+            // Calcular porcentaje ganancia: ((precio_final_con_iva - precio_compra) / precio_compra) * 100
+            const porcentajeGanancia = ((precioFinal - precioCompra) / precioCompra) * 100;
+            document.getElementById('porcentaje_ganancia').value = porcentajeGanancia.toFixed(2);
+        }
+    }
+    
+    // Función para recalcular el precio final cuando cambia el precio de compra manteniendo el % de ganancia
+    function recalcularPrecioFinalDesdeCompra() {
+        const precioCompra = parseFloat(document.getElementById('precio_compra').value);
+        const porcentajeGanancia = parseFloat(document.getElementById('porcentaje_ganancia').value);
+        const ivaPorcentaje = parseFloat(document.getElementById('iva').value);
+        
+        if (precioCompra > 0 && !isNaN(porcentajeGanancia) && !isNaN(ivaPorcentaje)) {
+            // Si el precio de compra cambió pero el % de ganancia se mantiene,
+            // calculamos el nuevo precio sin IVA basado en el % de ganancia
+            const precioSinIVA = precioCompra * (1 + (porcentajeGanancia / 100));
+            
+            // Calculamos el nuevo precio final con IVA
+            const precioFinal = precioSinIVA * (1 + (ivaPorcentaje / 100));
+            
+            // Actualizamos los campos
+            document.getElementById('precio_venta').value = precioSinIVA.toFixed(2);
+            document.getElementById('precio_final').value = precioFinal.toFixed(2);
+            
+            // Calculamos el valor del IVA
+            const valorIVA = precioFinal - precioSinIVA;
+            document.getElementById('valor_iva').value = valorIVA.toFixed(2);
+        }
+    }
+    
+    // Configurar eventos para los campos
+    document.getElementById('precio_final').addEventListener('change', function() {
+        // Si cambia el precio final, recalculamos precio sin IVA, valor IVA y % ganancia
+        calcularPrecioSinIVA();
+    });
+    
+    document.getElementById('iva').addEventListener('change', function() {
+        // Si cambia el IVA, recalculamos precio sin IVA y valor IVA
+        calcularPrecioSinIVA();
+    });
+    
+    document.getElementById('precio_compra').addEventListener('change', function() {
+        // Si cambia el precio de compra, preguntamos qué mantener
+        const mantenerGanancia = confirm('¿Desea mantener el porcentaje de ganancia actual? ' +
+                                       'Presione OK para mantener el % de ganancia y recalcular el precio final. ' +
+                                       'Presione Cancelar para mantener el precio final y recalcular el % de ganancia.');
+        
+        if (mantenerGanancia) {
+            // Mantener % ganancia y recalcular precio final
+            recalcularPrecioFinalDesdeCompra();
+        } else {
+            // Mantener precio final y recalcular % ganancia
+            calcularGanancia();
+        }
+    });
+    
+    // Guardar los valores originales al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+        precioCompraOriginal = parseFloat(document.getElementById('precio_compra').value) || 0;
+        precioFinalOriginal = parseFloat(document.getElementById('precio_final').value) || 0;
+        ivaPorcentajeOriginal = parseFloat(document.getElementById('iva').value) || 0;
+    });
 </script>
 @endpush
 @endsection

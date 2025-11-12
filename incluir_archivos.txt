@@ -1,0 +1,21 @@
+@echo off 
+app 
+bootstrap 
+config 
+database 
+lang 
+public 
+resources 
+routes 
+storage 
+.env.example 
+artisan 
+composer.json 
+composer.lock 
+package.json 
+package-lock.json 
+vite.config.js 
+README.md 
+INSTALACION.md 
+instalar.bat 
+instalar.sh 

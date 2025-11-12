@@ -69,15 +69,27 @@
         <div class="card-body">
             <!-- Barra de búsqueda -->
             <div class="row mb-3">
-                <div class="col-md-6">
+                <div class="col-md-8">
                     <form action="{{ route('productos.index') }}" method="GET" class="d-flex">
                         <input type="text" name="search" class="form-control me-2" 
-                               placeholder="Buscar por código o nombre..." 
+                               placeholder="Buscar por código, nombre o descripción..." 
                                value="{{ request('search') }}">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-search"></i>
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-search"></i> Buscar
                         </button>
+                        @if(request('search'))
+                            <a href="{{ route('productos.index') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Limpiar
+                            </a>
+                        @endif
                     </form>
+                </div>
+                <div class="col-md-4 text-end">
+                    @if(request('search'))
+                        <small class="text-muted">
+                            Mostrando resultados para: <strong>"{{ request('search') }}"</strong>
+                        </small>
+                    @endif
                 </div>
             </div>
 
@@ -89,27 +101,27 @@
                             <th>Código</th>
                             <th>Nombre</th>
                             <th class="text-end">Precio Compra</th>
-                            <th class="text-end">Precio Venta</th>
+                            <th class="text-end">Precio Final (IVA inc.)</th>
                             <th class="text-center">Stock</th>
                             <th class="text-center">Estado</th>
                             <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($productos as $producto)
+                        @forelse($productos as $producto)
                         <tr>
                             <td>{{ $producto->codigo }}</td>
                             <td>{{ $producto->nombre }}</td>
                             <td class="text-end">${{ number_format($producto->precio_compra, 2) }}</td>
-                            <td class="text-end">${{ number_format($producto->precio_venta, 2) }}</td>
+                            <td class="text-end">${{ number_format($producto->precio_final, 2) }}</td>
                             <td class="text-center">
                                 <span class="badge {{ $producto->stock <= $producto->stock_minimo ? 'bg-danger' : 'bg-success' }}">
                                     {{ $producto->stock }}
                                 </span>
                             </td>
                             <td class="text-center">
-                                <span class="badge {{ $producto->estado ? 'bg-success' : 'bg-danger' }}">
-                                    {{ $producto->estado ? 'Activo' : 'Inactivo' }}
+                                <span class="badge {{ $producto->estado == 'activo' ? 'bg-success' : 'bg-danger' }}">
+                                    {{ $producto->estado == 'activo' ? 'Activo' : 'Inactivo' }}
                                 </span>
                             </td>
                             <td class="text-center">
@@ -139,14 +151,49 @@
                                 </form>
                             </td>
                         </tr>
-                        @endforeach
+                        @empty
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                @if(request('search'))
+                                    <div class="text-muted">
+                                        <i class="fas fa-search fa-2x mb-3"></i>
+                                        <h5>No se encontraron productos</h5>
+                                        <p>No hay productos que coincidan con "<strong>{{ request('search') }}</strong>"</p>
+                                        <a href="{{ route('productos.index') }}" class="btn btn-primary">
+                                            <i class="fas fa-list"></i> Ver todos los productos
+                                        </a>
+                                    </div>
+                                @else
+                                    <div class="text-muted">
+                                        <i class="fas fa-box-open fa-2x mb-3"></i>
+                                        <h5>No hay productos registrados</h5>
+                                        <p>Comienza agregando tu primer producto</p>
+                                        <a href="{{ route('productos.create') }}" class="btn btn-primary">
+                                            <i class="fas fa-plus"></i> Crear primer producto
+                                        </a>
+                                    </div>
+                                @endif
+                            </td>
+                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
 
-            <!-- Paginación -->
-            <div class="d-flex justify-content-end">
-                {{ $productos->links() }}
+            <!-- Información de resultados y paginación -->
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted">
+                    @if($productos->total() > 0)
+                        Mostrando {{ $productos->firstItem() }} - {{ $productos->lastItem() }} 
+                        de {{ $productos->total() }} productos
+                        @if(request('search'))
+                            para la búsqueda "<strong>{{ request('search') }}</strong>"
+                        @endif
+                    @endif
+                </div>
+                <div>
+                    {{ $productos->links() }}
+                </div>
             </div>
         </div>
     </div>

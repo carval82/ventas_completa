@@ -1,0 +1,1017 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Venta;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use App\Helpers\AlegraErrorHelper;
+
+class AlegraService
+{
+    protected $baseUrl;
+    protected $auth;
+    protected $http;
+
+    public function __construct()
+    {
+        $this->baseUrl = config('alegra.base_url');
+        
+        // Alegra usa Basic Auth con email:token
+        $this->auth = base64_encode(
+            config('alegra.user') . ':' . config('alegra.token')
+        );
+        
+        $this->http = Http::withHeaders([
+            'Authorization' => 'Basic ' . $this->auth,
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json'
+        ])->baseUrl($this->baseUrl);
+    }
+
+    /**
+     * Crear una factura en Alegra
+     * @param array $datos Datos de la factura
+     * @return array
+     */
+    public function crearFactura(array $datos)
+    {
+        try {
+            Log::info('Iniciando creación de factura en Alegra', [
+                'data' => $datos
+            ]);
+
+            // Asegurarse de que el cliente tenga el formato correcto
+            if (isset($datos['client']) && isset($datos['client']['id'])) {
+                $datos['client']['id'] = intval($datos['client']['id']);
+            }
+
+            // Asegurarse de que el método de pago tenga el formato correcto
+            if (isset($datos['payment'])) {
+                if (!isset($datos['payment']['paymentMethod']) || !isset($datos['payment']['account'])) {
+                    Log::warning('Formato de pago incorrecto, aplicando formato estándar', [
+                        'payment_original' => $datos['payment']
+                    ]);
+                    
+                    // Aplicar formato estándar según la memoria
+                    $datos['payment'] = [
+                        'paymentMethod' => ['id' => 10],
+                        'account' => ['id' => 1]
+                    ];
+                }
+            }
+
+            // Si es factura electrónica, agregar configuración específica
+            if ($datos['useElectronicInvoice'] ?? false) {
+                Log::info('Configurando factura electrónica');
+                
+                // Buscar una numeración electrónica activa
+                $resolucion = $this->obtenerResolucionPreferida('electronica');
+                
+                if ($resolucion['success']) {
+                    $datos['numberTemplate'] = [
+                        'id' => $resolucion['data']['id']
+                    ];
+                } else {
+                    Log::warning('No se encontró una numeración electrónica activa, usando configuración por defecto');
+                    $datos['numberTemplate'] = [
+                        'id' => config('alegra.fe_template_id', 1)
+                    ];
+                }
+                
+                $datos['stamp'] = [
+                    'generateStamp' => true,
+                    'generateQrCode' => true
+                ];
+            }
+
+            Log::info('Enviando datos de factura a Alegra', [
+                'datos_finales' => $datos
+            ]);
+
+            $response = $this->http->post('invoices', $datos);
+            
+            if ($response->successful()) {
+                Log::info('Factura creada exitosamente en Alegra', [
+                    'factura_id' => $response->json()['id']
+                ]);
+                
+                return [
+                    'success' => true,
+                    'data' => $response->json()
+                ];
+            }
+
+            Log::error('Error en respuesta de Alegra', [
+                'error' => $response->json(),
+                'status' => $response->status()
+            ]);
+
+            // Usar el helper para obtener un mensaje de error amigable
+            $errorMessage = AlegraErrorHelper::parseErrorResponse($response->json());
+            
+            return [
+                'success' => false,
+                'error' => $errorMessage,
+                'error_raw' => $response->json()
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Excepción en servicio Alegra', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Mapear forma de pago de nuestro sistema a Alegra
+     * @param string $formaPago
+     * @return array
+     */
+    public function mapearFormaPago($formaPago)
+    {
+        Log::info('Mapeando forma de pago', ['forma_pago' => $formaPago]);
+        
+        // Obtener métodos de pago de la configuración
+        $metodosPago = config('alegra.payment_methods', []);
+        
+        // Normalizar la forma de pago (minúsculas, sin espacios)
+        $formaPagoNormalizada = strtolower(trim($formaPago));
+        
+        // Si existe en la configuración, usar esa configuración
+        if (isset($metodosPago[$formaPagoNormalizada])) {
+            $metodoPago = $metodosPago[$formaPagoNormalizada];
+            return [
+                'paymentMethod' => ['id' => $metodoPago['id']],
+                'account' => ['id' => $metodoPago['account_id']]
+            ];
+        }
+        
+        // Mapeo alternativo si no está en la configuración
+        switch ($formaPagoNormalizada) {
+            case 'tarjeta':
+            case 'tarjeta_credito':
+                return [
+                    'paymentMethod' => ['id' => 3],  // Tarjeta de crédito
+                    'account' => ['id' => 1]         // Cuenta por defecto
+                ];
+            case 'tarjeta_debito':
+                return [
+                    'paymentMethod' => ['id' => 4],  // Tarjeta de débito
+                    'account' => ['id' => 1]         // Cuenta por defecto
+                ];
+            case 'transferencia':
+            case 'transferencia_bancaria':
+                return [
+                    'paymentMethod' => ['id' => 1],  // Transferencia bancaria
+                    'account' => ['id' => 1]         // Cuenta por defecto
+                ];
+            default:
+                // Por defecto, usar efectivo
+                return [
+                    'paymentMethod' => ['id' => 10], // Efectivo por defecto
+                    'account' => ['id' => 1]         // Cuenta por defecto
+                ];
+        }
+    }
+
+    public function testConnection()
+    {
+        try {
+            Log::info('Intentando conexión con Alegra', [
+                'url' => $this->baseUrl . '/company',
+                'auth_header' => 'Basic ' . $this->auth
+            ]);
+
+            $response = $this->http->get('/company');
+            
+            Log::info('Respuesta de Alegra', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+            
+            if ($response->successful()) {
+                return [
+                    'success' => true,
+                    'data' => $response->json()
+                ];
+            }
+            
+            return [
+                'success' => false,
+                'error' => $response->json()['message'] ?? 'Error en conexión'
+            ];
+            
+        } catch (\Exception $e) {
+            Log::error('Excepción en conexión con Alegra', [
+                'error' => $e->getMessage()
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Crear un cliente en Alegra
+     * @param \App\Models\Cliente $cliente
+     * @return array
+     */
+    public function crearClienteAlegra($cliente)
+    {
+        try {
+            Log::info('Iniciando creación de cliente en Alegra', [
+                'cliente_id' => $cliente->id,
+                'cedula' => $cliente->cedula
+            ]);
+
+            // Preparar datos del cliente para Alegra
+            $datos = [
+                'name' => $cliente->nombres . ' ' . $cliente->apellidos,
+                'identification' => $cliente->cedula,
+                'email' => $cliente->email ?: 'sin@email.com',
+                'phonePrimary' => $cliente->telefono ?: '0000000000',
+                'address' => [
+                    'address' => $cliente->direccion ?? 'Sin dirección'
+                ],
+                'type' => 'client',
+                'kindOfPerson' => 'PERSON_ENTITY',
+                'regime' => 'SIMPLIFIED_REGIME'
+            ];
+
+            Log::info('Datos del cliente para Alegra', [
+                'datos' => $datos
+            ]);
+
+            $response = $this->http->post('contacts', $datos);
+            
+            if ($response->successful()) {
+                Log::info('Cliente creado exitosamente en Alegra', [
+                    'cliente_id' => $cliente->id,
+                    'alegra_id' => $response->json()['id'],
+                    'response' => $response->json()
+                ]);
+                
+                return [
+                    'success' => true,
+                    'data' => $response->json()
+                ];
+            }
+
+            Log::error('Error al crear cliente en Alegra', [
+                'error' => $response->json(),
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $response->json()['message'] ?? 'Error al crear cliente'
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Excepción al crear cliente en Alegra', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Crear un producto en Alegra
+     * @param \App\Models\Producto $producto
+     * @return array
+     */
+    public function crearProductoAlegra($producto)
+    {
+        try {
+            Log::info('Iniciando creación de producto en Alegra', [
+                'producto_id' => $producto->id,
+                'nombre' => $producto->nombre
+            ]);
+
+            // Preparar datos del producto para Alegra
+            $datos = [
+                'name' => $producto->nombre,
+                'description' => $producto->descripcion ?? $producto->nombre,
+                'reference' => $producto->codigo,
+                'price' => (float)$producto->precio_venta,
+                'type' => 'product', // Especificar que es un producto, no un servicio
+                'inventory' => [
+                    'unit' => $producto->unidad_medida ?? 'unit',
+                    'availableQuantity' => (int)$producto->stock,
+                    'unitCost' => (float)$producto->precio_compra,
+                    'negativeSale' => true, // Permitir ventas en negativo
+                    'warehouses' => [
+                        [
+                            'id' => 1, // Bodega principal por defecto
+                            'initialQuantity' => (int)$producto->stock
+                        ]
+                    ]
+                ]
+            ];
+
+            Log::info('Datos del producto para Alegra', [
+                'datos' => $datos
+            ]);
+
+            $response = $this->http->post('items', $datos);
+            
+            if ($response->successful()) {
+                Log::info('Producto creado exitosamente en Alegra', [
+                    'producto_id' => $producto->id,
+                    'alegra_id' => $response->json()['id'],
+                    'response' => $response->json()
+                ]);
+                
+                return [
+                    'success' => true,
+                    'data' => $response->json()
+                ];
+            }
+
+            Log::error('Error al crear producto en Alegra', [
+                'error' => $response->json(),
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $response->json()['message'] ?? 'Error al crear producto'
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Excepción al crear producto en Alegra', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Actualizar un producto en Alegra
+     * @param \App\Models\Producto $producto
+     * @return array
+     */
+    public function actualizarProductoAlegra($producto)
+    {
+        try {
+            if (!$producto->id_alegra) {
+                return [
+                    'success' => false,
+                    'error' => 'El producto no tiene un ID de Alegra asignado'
+                ];
+            }
+
+            Log::info('Iniciando actualización de producto en Alegra', [
+                'producto_id' => $producto->id,
+                'alegra_id' => $producto->id_alegra
+            ]);
+
+            // Preparar datos del producto para Alegra
+            $datos = [
+                'name' => $producto->nombre,
+                'description' => $producto->descripcion ?? $producto->nombre,
+                'reference' => $producto->codigo,
+                'price' => (float)$producto->precio_venta,
+                'inventory' => [
+                    'unit' => $producto->unidad_medida ?? 'unit',
+                    'unitCost' => (float)$producto->precio_compra,
+                ]
+            ];
+
+            Log::info('Datos del producto para actualizar en Alegra', [
+                'datos' => $datos
+            ]);
+
+            $response = $this->http->put("items/{$producto->id_alegra}", $datos);
+            
+            if ($response->successful()) {
+                Log::info('Producto actualizado exitosamente en Alegra', [
+                    'producto_id' => $producto->id,
+                    'alegra_id' => $producto->id_alegra,
+                    'response' => $response->json()
+                ]);
+                
+                return [
+                    'success' => true,
+                    'data' => $response->json()
+                ];
+            }
+
+            Log::error('Error al actualizar producto en Alegra', [
+                'error' => $response->json(),
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $response->json()['message'] ?? 'Error al actualizar producto'
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Excepción al actualizar producto en Alegra', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    public function obtenerProductosAlegra()
+    {
+        try {
+            $response = $this->http->get('/items');
+            
+            if ($response->successful()) {
+                Log::info('Productos obtenidos de Alegra', [
+                    'count' => count($response->json())
+                ]);
+                return ['success' => true, 'data' => $response->json()];
+            }
+
+            Log::error('Error al obtener productos de Alegra', [
+                'response' => $response->json()
+            ]);
+            return ['success' => false, 'error' => $response->json()['message'] ?? 'Error al obtener productos'];
+
+        } catch (\Exception $e) {
+            Log::error('Excepción al obtener productos de Alegra', [
+                'error' => $e->getMessage()
+            ]);
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    public function obtenerClientesAlegra()
+    {
+        try {
+            $response = $this->http->get('/contacts?type=client');
+            
+            if ($response->successful()) {
+                Log::info('Clientes obtenidos de Alegra', [
+                    'count' => count($response->json())
+                ]);
+                return ['success' => true, 'data' => $response->json()];
+            }
+
+            Log::error('Error al obtener clientes de Alegra', [
+                'response' => $response->json()
+            ]);
+            return ['success' => false, 'error' => $response->json()['message'] ?? 'Error al obtener clientes'];
+
+        } catch (\Exception $e) {
+            Log::error('Excepción al obtener clientes de Alegra', [
+                'error' => $e->getMessage()
+            ]);
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    public function obtenerEstadoFactura($facturaId)
+    {
+        try {
+            $response = $this->http->get("/invoices/{$facturaId}/status");
+            return $response->successful() 
+                ? ['success' => true, 'data' => $response->json()]
+                : ['success' => false, 'error' => $response->json()['message'] ?? 'Error'];
+        } catch (\Exception $e) {
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    public function enviarFacturaADian($facturaId)
+    {
+        try {
+            Log::info('Iniciando envío de factura a DIAN', [
+                'factura_id' => $facturaId
+            ]);
+            
+            // Verificamos si la factura existe
+            $facturaResponse = $this->http->get("/invoices/{$facturaId}");
+            
+            if (!$facturaResponse->successful()) {
+                Log::error('Error al obtener datos de la factura para enviarla a DIAN', [
+                    'factura_id' => $facturaId,
+                    'response' => $facturaResponse->json()
+                ]);
+                
+                return [
+                    'success' => false, 
+                    'error' => $facturaResponse->json()['message'] ?? 'Error al obtener datos de la factura'
+                ];
+            }
+            
+            // Ejecutar el script Node.js para abrir y enviar la factura a la DIAN
+            $scriptPath = base_path('scripts/alegra_open_and_stamp.cjs');
+            $command = 'node ' . escapeshellarg($scriptPath) . ' ' . escapeshellarg($facturaId);
+            $output = [];
+            $returnCode = 0;
+            
+            Log::info('Ejecutando script Node.js para abrir y enviar factura a DIAN', [
+                'command' => $command
+            ]);
+            
+            exec($command, $output, $returnCode);
+            
+            $outputString = implode("\n", $output);
+            
+            // Intentar parsear la última línea como JSON (donde está el resultado)
+            $lastLine = end($output);
+            $response = json_decode($lastLine, true);
+            
+            Log::info('Respuesta del script Node.js', [
+                'return_code' => $returnCode,
+                'output' => $outputString,
+                'response' => $response
+            ]);
+            
+            if ($returnCode === 0 && isset($response['success']) && $response['success']) {
+                return ['success' => true, 'data' => $response['data'] ?? []];
+            }
+            
+            return [
+                'success' => false, 
+                'error' => $response['error'] ?? 'Error desconocido en la integración con Alegra'
+            ];
+        } catch (\Exception $e) {
+            Log::error('Excepción al enviar factura a DIAN', [
+                'factura_id' => $facturaId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+    
+    /**
+     * Crea un script JavaScript para enviar una factura a la DIAN
+     * @param string $facturaId
+     * @return string
+     */
+    private function crearScriptEnviarFacturaADian($facturaId)
+    {
+        // Obtener credenciales desde la configuración
+        $email = config('services.alegra.email', 'pcapacho24@hotmail.com');
+        $token = config('services.alegra.token', '4398994d2a44f8153123');
+        
+        return <<<JS
+const https = require('https');
+
+// Credenciales de Alegra
+const email = '{$email}';
+const token = '{$token}';
+const auth = Buffer.from(`\${email}:\${token}`).toString('base64');
+
+// Primero abrimos la factura si está en estado borrador
+function abrirFactura(facturaId) {
+  return new Promise((resolve, reject) => {
+    // Primero obtenemos el estado actual de la factura
+    const optionsGet = {
+      hostname: 'api.alegra.com',
+      port: 443,
+      path: `/api/v1/invoices/\${facturaId}/status`,
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic \${auth}`,
+        'Accept': 'application/json'
+      }
+    };
+    
+    const reqGet = https.request(optionsGet, (resGet) => {
+      let dataGet = '';
+      
+      resGet.on('data', (chunk) => {
+        dataGet += chunk;
+      });
+      
+      resGet.on('end', () => {
+        try {
+          if (resGet.statusCode >= 200 && resGet.statusCode < 300) {
+            const statusData = JSON.parse(dataGet);
+            console.log(`Estado actual de la factura: \${statusData.status}`);
+            
+            // Si la factura está en estado borrador, la abrimos
+            if (statusData.status === 'draft') {
+              const optionsOpen = {
+                hostname: 'api.alegra.com',
+                port: 443,
+                path: `/api/v1/invoices/\${facturaId}/open`,
+                method: 'POST',
+                headers: {
+                  'Authorization': `Basic \${auth}`,
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json'
+                }
+              };
+              
+              const data = JSON.stringify({
+                payment: {
+                  paymentMethod: { id: 10 },
+                  account: { id: 1 }
+                }
+              });
+              
+              const reqOpen = https.request(optionsOpen, (resOpen) => {
+                let dataOpen = '';
+                
+                resOpen.on('data', (chunk) => {
+                  dataOpen += chunk;
+                });
+                
+                resOpen.on('end', () => {
+                  try {
+                    if (resOpen.statusCode >= 200 && resOpen.statusCode < 300) {
+                      console.log('Factura abierta exitosamente');
+                      resolve(true);
+                    } else {
+                      console.log(`Error al abrir factura: \${resOpen.statusCode}`);
+                      console.log(dataOpen);
+                      // Intentamos enviar a DIAN de todas formas
+                      resolve(true);
+                    }
+                  } catch (e) {
+                    console.log(`Error al procesar respuesta de abrir factura: \${e.message}`);
+                    // Intentamos enviar a DIAN de todas formas
+                    resolve(true);
+                  }
+                });
+              });
+              
+              reqOpen.on('error', (e) => {
+                console.log(`Error en solicitud de abrir factura: \${e.message}`);
+                // Intentamos enviar a DIAN de todas formas
+                resolve(true);
+              });
+              
+              reqOpen.write(data);
+              reqOpen.end();
+            } else {
+              // La factura ya está abierta o en otro estado
+              resolve(true);
+            }
+          } else {
+            console.log(`Error al obtener estado de factura: \${resGet.statusCode}`);
+            console.log(dataGet);
+            // Intentamos enviar a DIAN de todas formas
+            resolve(true);
+          }
+        } catch (e) {
+          console.log(`Error al procesar respuesta de estado: \${e.message}`);
+          // Intentamos enviar a DIAN de todas formas
+          resolve(true);
+        }
+      });
+    });
+    
+    reqGet.on('error', (e) => {
+      console.log(`Error en solicitud de estado: \${e.message}`);
+      // Intentamos enviar a DIAN de todas formas
+      resolve(true);
+    });
+    
+    reqGet.end();
+  });
+}
+
+// Enviar factura a DIAN
+function enviarFacturaADian(facturaId) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.alegra.com',
+      port: 443,
+      path: `/api/v1/invoices/\${facturaId}/stamp`,
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic \${auth}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    };
+    
+    const req = https.request(options, (res) => {
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          const responseData = data ? JSON.parse(data) : {};
+          
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve({
+              success: true,
+              data: responseData
+            });
+          } else {
+            resolve({
+              success: false,
+              error: responseData.message || 'Error desconocido en la integración con Alegra',
+              data: responseData
+            });
+          }
+        } catch (e) {
+          resolve({
+            success: false,
+            error: e.message,
+            data: data
+          });
+        }
+      });
+    });
+    
+    req.on('error', (e) => {
+      resolve({
+        success: false,
+        error: e.message
+      });
+    });
+    
+    req.end();
+  });
+}
+
+// Ejecutar el proceso completo
+async function ejecutarProceso() {
+  try {
+    // Primero abrimos la factura si es necesario
+    await abrirFactura('{$facturaId}');
+    
+    // Esperamos un momento para que se procese el cambio de estado
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Luego enviamos la factura a la DIAN
+    const resultado = await enviarFacturaADian('{$facturaId}');
+    
+    // Mostramos el resultado
+    console.log(JSON.stringify(resultado));
+  } catch (e) {
+    console.log(JSON.stringify({
+      success: false,
+      error: e.message
+    }));
+  }
+}
+
+// Iniciar el proceso
+ejecutarProceso();
+JS;
+    }
+
+    /**
+     * Abre una factura que está en estado borrador
+     * @param string $facturaId
+     * @return array
+     */
+    public function abrirFactura($facturaId)
+    {
+        try {
+            Log::info('Intentando abrir factura en Alegra', [
+                'factura_id' => $facturaId
+            ]);
+            
+            // Primero obtenemos los datos de la factura
+            $facturaResponse = $this->http->get("/invoices/{$facturaId}");
+            
+            if (!$facturaResponse->successful()) {
+                Log::error('Error al obtener datos de la factura para abrirla', [
+                    'factura_id' => $facturaId,
+                    'response' => $facturaResponse->json()
+                ]);
+                
+                return [
+                    'success' => false, 
+                    'error' => $facturaResponse->json()['message'] ?? 'Error al obtener datos de la factura'
+                ];
+            }
+            
+            $facturaData = $facturaResponse->json();
+            
+            // Preparamos los datos mínimos necesarios para abrir la factura
+            $openData = [
+                'date' => $facturaData['date'] ?? date('Y-m-d'),
+                'dueDate' => $facturaData['dueDate'] ?? date('Y-m-d'),
+                'client' => ['id' => $facturaData['client']['id'] ?? null],
+                'items' => $facturaData['items'] ?? [],
+                'paymentForm' => $facturaData['paymentForm'] ?? 'CASH',
+                'paymentMethod' => $facturaData['paymentMethod'] ?? 'CASH',
+                'payment' => [
+                    'paymentMethod' => ['id' => 10], // Efectivo según DIAN
+                    'account' => ['id' => 1]         // Cuenta por defecto
+                ]
+            ];
+            
+            Log::info('Datos para abrir factura', [
+                'factura_id' => $facturaId,
+                'open_data' => $openData
+            ]);
+            
+            // Intentamos abrir la factura usando el endpoint directo de JavaScript
+            $jsScript = $this->crearScriptAbrirFactura($facturaId);
+            $jsScriptFile = storage_path('app/temp_open_invoice.cjs');
+            file_put_contents($jsScriptFile, $jsScript);
+            
+            // Ejecutar el script JavaScript
+            $command = 'node ' . escapeshellarg($jsScriptFile);
+            $output = [];
+            $returnCode = 0;
+            
+            Log::info('Ejecutando comando Node.js para abrir factura', [
+                'command' => $command
+            ]);
+            
+            exec($command, $output, $returnCode);
+            
+            // Eliminar archivo temporal
+            unlink($jsScriptFile);
+            
+            $outputString = implode("\n", $output);
+            $response = json_decode($outputString, true);
+            
+            Log::info('Respuesta de Node.js al abrir factura', [
+                'return_code' => $returnCode,
+                'output' => $outputString,
+                'response' => $response
+            ]);
+            
+            if ($returnCode === 0 && isset($response['success']) && $response['success']) {
+                return ['success' => true, 'data' => $response['data'] ?? []];
+            }
+            
+            return [
+                'success' => false, 
+                'error' => $response['error'] ?? 'Error al abrir la factura'
+            ];
+        } catch (\Exception $e) {
+            Log::error('Excepción al abrir factura en Alegra', [
+                'factura_id' => $facturaId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+    
+    /**
+     * Crea un script JavaScript para abrir una factura
+     * @param string $facturaId
+     * @return string
+     */
+    private function crearScriptAbrirFactura($facturaId)
+    {
+        // Obtener credenciales desde la configuración
+        $email = config('services.alegra.email');
+        $token = config('services.alegra.token');
+        
+        return <<<JS
+const https = require('https');
+
+// Credenciales de Alegra
+const email = '{$email}';
+const token = '{$token}';
+const auth = Buffer.from(`\${email}:\${token}`).toString('base64');
+
+// Opciones de la solicitud
+const options = {
+  hostname: 'api.alegra.com',
+  port: 443,
+  path: '/api/v1/invoices/{$facturaId}/open',
+  method: 'POST',
+  headers: {
+    'Authorization': `Basic \${auth}`,
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  }
+};
+
+// Realizar la solicitud
+const req = https.request(options, (res) => {
+  let data = '';
+  
+  res.on('data', (chunk) => {
+    data += chunk;
+  });
+  
+  res.on('end', () => {
+    try {
+      const responseData = data ? JSON.parse(data) : {};
+      
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        console.log(JSON.stringify({
+          success: true,
+          data: responseData
+        }));
+      } else {
+        console.log(JSON.stringify({
+          success: false,
+          error: responseData.message || 'Error desconocido en la integración con Alegra',
+          data: responseData
+        }));
+      }
+    } catch (e) {
+      console.log(JSON.stringify({
+        success: false,
+        error: e.message,
+        data: data
+      }));
+    }
+  });
+});
+
+req.on('error', (e) => {
+  console.log(JSON.stringify({
+    success: false,
+    error: e.message
+  }));
+});
+
+// Enviar la solicitud
+req.end();
+JS;
+    }
+
+    public function descargarPDFFactura($facturaId)
+    {
+        try {
+            $response = $this->http->get("/invoices/{$facturaId}/pdf");
+            return $response->successful() 
+                ? ['success' => true, 'data' => $response->body()]
+                : ['success' => false, 'error' => $response->json()['message'] ?? 'Error'];
+        } catch (\Exception $e) {
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    public function obtenerResolucionPreferida($tipo_factura = null)
+    {
+        try {
+            // Obtener todas las resoluciones
+            $response = $this->http->get('/number-templates');
+            
+            if (!$response->successful()) {
+                return [
+                    'success' => false, 
+                    'error' => $response->json()['message'] ?? 'Error al obtener resoluciones'
+                ];
+            }
+            
+            $resoluciones = $response->json();
+            
+            // Filtrar por tipo de factura (electrónica o no)
+            $filtradas = array_filter($resoluciones, function($resolucion) use ($tipo_factura) {
+                if ($tipo_factura === 'electronica') {
+                    return $resolucion['isElectronic'] === true && $resolucion['status'] === 'active';
+                } else {
+                    return $resolucion['isElectronic'] === false && $resolucion['status'] === 'active';
+                }
+            });
+            
+            if (empty($filtradas)) {
+                return [
+                    'success' => false,
+                    'error' => "No se encontró una resolución activa para facturas " . 
+                               ($tipo_factura === 'electronica' ? 'electrónicas' : 'normales')
+                ];
+            }
+            
+            // Tomar la primera resolución activa
+            $resolucion = reset($filtradas);
+            
+            return [
+                'success' => true,
+                'data' => $resolucion
+            ];
+            
+        } catch (\Exception $e) {
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+}

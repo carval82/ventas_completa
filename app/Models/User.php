@@ -23,7 +23,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'estado'
+        'estado',
+        'empresa_id'
     ];
     /**
      * The attributes that should be hidden for serialization.
@@ -47,5 +48,13 @@ class User extends Authenticatable
         'password' => 'hashed',
         'estado' => 'boolean',
     ];
+}
+
+/**
+ * Relación con la empresa
+ */
+public function empresa()
+{
+    return $this->belongsTo(Empresa::class);
 }
 }

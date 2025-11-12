@@ -82,8 +82,8 @@
                        <tbody>
                            @forelse($producto->detalleVentas as $detalle)
                            <tr>
-                               <td>{{ $detalle->venta->numero_factura }}</td>
-                               <td>{{ $detalle->venta->fecha_venta->format('d/m/Y') }}</td>
+                               <td>{{ $detalle->venta ? $detalle->venta->numero_factura : 'N/A' }}</td>
+                               <td>{{ $detalle->venta && $detalle->venta->fecha_venta ? $detalle->venta->fecha_venta->format('d/m/Y') : 'N/A' }}</td>
                                <td class="text-center">{{ $detalle->cantidad }}</td>
                                <td class="text-end">${{ number_format($detalle->precio_unitario, 2) }}</td>
                                <td class="text-end">${{ number_format($detalle->subtotal, 2) }}</td>

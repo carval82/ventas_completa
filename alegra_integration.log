@@ -1,0 +1,6 @@
+2025-03-10 21:37:51,614 - alegra_integration - INFO - Datos de factura a enviar: {"client": {"id": 23}, "items": [{"id": 45, "price": 300000, "quantity": 1}], "date": "2025-03-11", "dueDate": "2025-03-11", "paymentForm": "CASH", "paymentMethod": "CASH", "payment": {"paymentMethod": {"id": 10}, "account": {"id": 1}}, "numberTemplate": {"id": 19}}
+2025-03-10 21:37:53,642 - alegra_integration - INFO - Respuesta de creación de factura: 201
+2025-03-10 21:37:53,643 - alegra_integration - INFO - Factura creada exitosamente
+2025-03-10 21:41:59,415 - alegra_integration - INFO - Datos de factura a enviar: {"client": {"id": 38}, "items": [{"id": 67, "price": 26000, "quantity": 1}], "date": "2025-03-10", "dueDate": "2025-03-10", "paymentForm": "CASH", "paymentMethod": "CASH", "payment": {"paymentMethod": {"id": 10}, "account": {"id": 1}}, "numberTemplate": {"id": 19}}
+2025-03-10 21:42:01,605 - alegra_integration - INFO - Respuesta de creación de factura: 201
+2025-03-10 21:42:01,605 - alegra_integration - INFO - Factura creada exitosamente

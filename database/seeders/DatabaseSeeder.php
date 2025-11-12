@@ -11,7 +11,10 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
             ContabilidadSeeder::class,
-            ConfiguracionCreditoSeeder::class
+            ConfiguracionCreditoSeeder::class,
+            AdminUserSeeder::class, // Usuario administrador
+            RestaurarDatosSeeder::class, // Restauración automática de datos
+            // EmpresaAlegraSeeder::class, // Comentado para evitar errores
         ]);
     }
 }

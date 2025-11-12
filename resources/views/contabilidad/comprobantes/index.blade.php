@@ -16,7 +16,11 @@
                     <label class="form-label">Fecha Hasta</label>
                     <input type="date" class="form-control" name="fecha_hasta" value="{{ request('fecha_hasta') }}">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <label class="form-label">Prefijo</label>
+                    <input type="text" class="form-control" name="prefijo" value="{{ request('prefijo') }}" placeholder="Buscar por prefijo">
+                </div>
+                <div class="col-md-2">
                     <label class="form-label">Tipo</label>
                     <select class="form-select" name="tipo">
                         <option value="">Todos</option>
@@ -25,7 +29,7 @@
                         <option value="Diario" {{ request('tipo') == 'Diario' ? 'selected' : '' }}>Diario</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Estado</label>
                     <select class="form-select" name="estado">
                         <option value="">Todos</option>
@@ -63,6 +67,7 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
+                            <th>Prefijo</th>
                             <th>Número</th>
                             <th>Fecha</th>
                             <th>Tipo</th>
@@ -76,6 +81,7 @@
                     <tbody>
                         @forelse($comprobantes as $comprobante)
                             <tr>
+                                <td>{{ $comprobante->prefijo }}</td>
                                 <td>{{ $comprobante->numero }}</td>
                                 <td>{{ $comprobante->fecha->format('d/m/Y') }}</td>
                                 <td>
@@ -146,7 +152,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-3">
+                                <td colspan="9" class="text-center py-3">
                                     No hay comprobantes registrados
                                 </td>
                             </tr>
@@ -200,9 +206,12 @@ function confirmarAnulacion(button) {
     });
 }
 
-// Actualizar tabla al cambiar filtros
-$('#filtrosForm select, #filtrosForm input').change(function() {
-    $('#filtrosForm').submit();
+// Inicializar datepickers y otros componentes
+$(document).ready(function() {
+    // Enviar formulario al cambiar cualquier filtro
+    $('#filtrosForm select').change(function() {
+        $('#filtrosForm').submit();
+    });
 });
 </script>
 @endpush

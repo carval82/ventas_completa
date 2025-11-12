@@ -1,0 +1,1037 @@
+2025-03-10 20:30:47,366 - alegra_integration - INFO - Respuesta del test de conexión: 200
+2025-03-10 20:30:47,366 - alegra_integration - INFO - Conexión exitosa: {
+  "name": "LUIS CARLOS CORREA ARRIETA",
+  "identification": "8437347",
+  "phone": "3012481020",
+  "website": "",
+  "email": "interveredanet.cr@gmail.com",
+  "regime": "No responsable de IVA",
+  "applicationVersion": "colombia",
+  "registryDate": "2022-09-30 11:52:41",
+  "timezone": "America/Bogota",
+  "profile": null,
+  "decimalPrecision": "0",
+  "calculationScale": 6,
+  "multitax": false,
+  "employeesNumber": "1-2",
+  "sector": null,
+  "showInvoiceTotalInWords": "no",
+  "showRetentionInvoice": "no",
+  "showNewLineCharOnPdf": "no",
+  "showItemReferenceOnPdf": false,
+  "additionalChargesActive": true,
+  "isActiveNoIvaDay": false,
+  "showNoIvaDaysOnItems": null,
+  "legalRepresentative": {
+    "name": "luis carlos correa arrieta",
+    "identification": "8437347",
+    "email": "interveredanet.cr@gmail.com"
+  },
+  "nameObject": {
+    "firstName": "LUIS",
+    "secondName": "CARLOS",
+    "lastName": "CORREA ARRIETA"
+  },
+  "address": {
+    "city": "Chigorod\u00f3",
+    "department": "Antioquia",
+    "address": "CLL 96a # 112a 27",
+    "zipCode": "057410"
+  },
+  "currency": {
+    "code": "COP",
+    "symbol": "$"
+  },
+  "multicurrency": false,
+  "decimalSeparator": ",",
+  "invoicePreferences": {
+    "defaultAnotation": null,
+    "defaultTermsAndConditions": "Esta factura se asimila en todos sus efectos a una letra de cambio de conformidad con el Art. 774 del c\u00f3digo de comercio. Autorizo que en caso de incumplimiento de esta obligaci\u00f3n sea reportado a las centrales de riesgo, se cobraran intereses por mora."
+  },
+  "logo": "https://d3r8o2i8390sjv.cloudfront.net/application/production/company-logos/7916955768f5fb685b15df1af2",
+  "kindOfPerson": "PERSON_ENTITY",
+  "identificationObject": {
+    "type": "NIT",
+    "number": "8437347",
+    "dv": "6",
+    "nationalityKindOfPerson": "NATIONAL"
+  },
+  "setTest": {
+    "id": "bc7dcb95-cf88-4976-bc6a-84a62189b91f",
+    "status": "AUTHORIZED"
+  },
+  "settings": {
+    "canStampInvoices": true,
+    "electronicInvoicing": true,
+    "isTypesAndNumerationsFeatureEnabled": true,
+    "electronicInvoicingWizardStep": 4,
+    "electronicInvoicingWizardProgress": "completed",
+    "statementClientAttached": true,
+    "hasSeenFAJ43b": false,
+    "canHandleThirdPartyTransactions": false,
+    "electronicInvoicingVersion": 2.1,
+    "canCreateAiuInvoice": true,
+    "canCreateHealthSectorInvoice": false,
+    "showSaleTickets": true,
+    "healthProviderCode": null,
+    "nextNumberEventForDocumentsReceived": 1,
+    "nextNumberEventForDocumentsReceivedPrefix": null,
+    "electronicResponse": true,
+    "isActiveAutomationElectronicInvoice": false,
+    "isActiveElectronicSaleTickets": false,
+    "automationElectronicInvoiceIdResolution": null,
+    "canCreateExportInvoice": false
+  }
+}
+2025-03-10 20:30:48,564 - alegra_integration - INFO - Respuesta de obtención de clientes: 200
+2025-03-10 20:30:48,565 - alegra_integration - INFO - Clientes obtenidos: 27
+2025-03-10 20:30:50,027 - alegra_integration - INFO - Respuesta de obtención de productos: 200
+2025-03-10 20:30:50,028 - alegra_integration - INFO - Productos obtenidos: 30
+2025-03-10 20:30:50,532 - alegra_integration - INFO - Respuesta de obtención de métodos de pago: 403
+2025-03-10 20:30:50,532 - alegra_integration - ERROR - Error al obtener métodos de pago: {"message":"Forbidden"}
+2025-03-10 20:30:51,253 - alegra_integration - INFO - Respuesta de obtención de plantillas: 200
+2025-03-10 20:30:51,253 - alegra_integration - INFO - Plantilla de factura electrónica encontrada: 19
+2025-03-10 20:31:53,608 - alegra_integration - INFO - Respuesta del test de conexión: 200
+2025-03-10 20:31:53,608 - alegra_integration - INFO - Conexión exitosa: {
+  "name": "LUIS CARLOS CORREA ARRIETA",
+  "identification": "8437347",
+  "phone": "3012481020",
+  "website": "",
+  "email": "interveredanet.cr@gmail.com",
+  "regime": "No responsable de IVA",
+  "applicationVersion": "colombia",
+  "registryDate": "2022-09-30 11:52:41",
+  "timezone": "America/Bogota",
+  "profile": null,
+  "decimalPrecision": "0",
+  "calculationScale": 6,
+  "multitax": false,
+  "employeesNumber": "1-2",
+  "sector": null,
+  "showInvoiceTotalInWords": "no",
+  "showRetentionInvoice": "no",
+  "showNewLineCharOnPdf": "no",
+  "showItemReferenceOnPdf": false,
+  "additionalChargesActive": true,
+  "isActiveNoIvaDay": false,
+  "showNoIvaDaysOnItems": null,
+  "legalRepresentative": {
+    "name": "luis carlos correa arrieta",
+    "identification": "8437347",
+    "email": "interveredanet.cr@gmail.com"
+  },
+  "nameObject": {
+    "firstName": "LUIS",
+    "secondName": "CARLOS",
+    "lastName": "CORREA ARRIETA"
+  },
+  "address": {
+    "city": "Chigorod\u00f3",
+    "department": "Antioquia",
+    "address": "CLL 96a # 112a 27",
+    "zipCode": "057410"
+  },
+  "currency": {
+    "code": "COP",
+    "symbol": "$"
+  },
+  "multicurrency": false,
+  "decimalSeparator": ",",
+  "invoicePreferences": {
+    "defaultAnotation": null,
+    "defaultTermsAndConditions": "Esta factura se asimila en todos sus efectos a una letra de cambio de conformidad con el Art. 774 del c\u00f3digo de comercio. Autorizo que en caso de incumplimiento de esta obligaci\u00f3n sea reportado a las centrales de riesgo, se cobraran intereses por mora."
+  },
+  "logo": "https://d3r8o2i8390sjv.cloudfront.net/application/production/company-logos/7916955768f5fb685b15df1af2",
+  "kindOfPerson": "PERSON_ENTITY",
+  "identificationObject": {
+    "type": "NIT",
+    "number": "8437347",
+    "dv": "6",
+    "nationalityKindOfPerson": "NATIONAL"
+  },
+  "setTest": {
+    "id": "bc7dcb95-cf88-4976-bc6a-84a62189b91f",
+    "status": "AUTHORIZED"
+  },
+  "settings": {
+    "canStampInvoices": true,
+    "electronicInvoicing": true,
+    "isTypesAndNumerationsFeatureEnabled": true,
+    "electronicInvoicingWizardStep": 4,
+    "electronicInvoicingWizardProgress": "completed",
+    "statementClientAttached": true,
+    "hasSeenFAJ43b": false,
+    "canHandleThirdPartyTransactions": false,
+    "electronicInvoicingVersion": 2.1,
+    "canCreateAiuInvoice": true,
+    "canCreateHealthSectorInvoice": false,
+    "showSaleTickets": true,
+    "healthProviderCode": null,
+    "nextNumberEventForDocumentsReceived": 1,
+    "nextNumberEventForDocumentsReceivedPrefix": null,
+    "electronicResponse": true,
+    "isActiveAutomationElectronicInvoice": false,
+    "isActiveElectronicSaleTickets": false,
+    "automationElectronicInvoiceIdResolution": null,
+    "canCreateExportInvoice": false
+  }
+}
+2025-03-10 20:31:54,441 - alegra_integration - INFO - Respuesta de obtención de plantillas: 200
+2025-03-10 20:31:54,442 - alegra_integration - INFO - Plantilla de factura electrónica encontrada: 19
+2025-03-10 20:31:55,588 - alegra_integration - INFO - Respuesta de obtención de clientes: 200
+2025-03-10 20:31:55,589 - alegra_integration - INFO - Clientes obtenidos: 27
+2025-03-10 20:31:56,885 - alegra_integration - INFO - Respuesta de obtención de productos: 200
+2025-03-10 20:31:56,886 - alegra_integration - INFO - Productos obtenidos: 30
+2025-03-10 20:31:57,589 - alegra_integration - INFO - Respuesta de obtención de plantillas: 200
+2025-03-10 20:31:57,589 - alegra_integration - INFO - Plantilla de factura electrónica encontrada: 19
+2025-03-10 20:31:57,591 - alegra_integration - INFO - Datos de factura a enviar: {"date": "2025-03-10", "dueDate": "2025-03-10", "client": {"id": 23}, "items": [{"id": 45, "price": 26000.0, "quantity": 1.0}], "numberTemplate": {"id": "19"}, "payment": {"paymentMethod": {"id": 1}, "account": {"id": 1}}}
+2025-03-10 20:31:58,686 - alegra_integration - INFO - Respuesta de creación de factura: 400
+2025-03-10 20:31:58,686 - alegra_integration - ERROR - Error al crear factura: {"message":"La forma de pago es obligatoria","code":0}
+2025-03-10 20:31:58,688 - alegra_integration - INFO - Datos de factura a enviar: {"date": "2025-03-10", "dueDate": "2025-03-10", "client": {"id": 23}, "items": [{"id": 45, "price": 26000.0, "quantity": 1.0}], "numberTemplate": {"id": "19"}, "paymentForm": "CASH", "paymentMethod": "CASH"}
+2025-03-10 20:32:00,836 - alegra_integration - INFO - Respuesta de creación de factura: 201
+2025-03-10 20:32:00,836 - alegra_integration - INFO - Factura creada exitosamente
+2025-03-10 20:33:23,226 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8001
+ * Running on http://192.168.1.3:8001
+2025-03-10 20:33:23,227 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-10 20:33:23,228 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 20:33:23,728 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 20:33:23,733 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 20:34:45,938 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8001
+ * Running on http://192.168.1.3:8001
+2025-03-10 20:34:45,938 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-10 20:34:45,940 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 20:34:46,523 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 20:34:46,527 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 20:41:47,873 - alegra_integration - INFO - Mapeo de clientes cargado: 27 registros
+2025-03-10 20:41:47,874 - alegra_integration - INFO - Mapeo de productos cargado: 30 registros
+2025-03-10 20:41:47,874 - alegra_integration - INFO - Probando conexión con Alegra
+2025-03-10 20:41:48,601 - alegra_integration - INFO - Conexión exitosa con Alegra
+2025-03-10 20:41:48,603 - alegra_integration - INFO - Preparando factura para cliente: {'id': 1, 'identification': '9999999', 'name': 'CLIENTE  FRECUENTE'}, items: [{'id': 1, 'name': 'desinstalacion sistema CCTV o camaras de seguridad', 'price': 26000, 'quantity': 1}], método de pago: efectivo
+2025-03-10 20:41:48,603 - alegra_integration - INFO - Factura preparada: {"date": "2025-03-10", "dueDate": "2025-03-10", "client": {"id": 24}, "items": [{"id": 45, "price": 26000.0, "quantity": 1.0}], "paymentForm": "CASH", "paymentMethod": "CASH"}
+2025-03-10 20:41:48,603 - alegra_integration - INFO - Creando factura en Alegra: {"date": "2025-03-10", "dueDate": "2025-03-10", "client": {"id": 24}, "items": [{"id": 45, "price": 26000.0, "quantity": 1.0}], "paymentForm": "CASH", "paymentMethod": "CASH"}
+2025-03-10 20:41:51,015 - alegra_integration - INFO - Factura creada exitosamente en Alegra: ID=112
+2025-03-10 20:43:43,485 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\alegra_service.py', reloading
+2025-03-10 20:43:43,595 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 20:43:43,824 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\alegra_service.py', reloading
+2025-03-10 20:43:44,037 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 20:43:44,546 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 20:43:44,554 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 20:43:45,079 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 20:43:45,087 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 20:45:11,142 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8001
+ * Running on http://192.168.1.3:8001
+2025-03-10 20:45:11,142 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-10 20:45:11,143 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 20:45:11,648 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 20:45:11,652 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 20:46:05,615 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\alegra_service.py', reloading
+2025-03-10 20:46:05,893 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 20:46:06,045 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\alegra_service.py', reloading
+2025-03-10 20:46:06,048 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\alegra_service.py', reloading
+2025-03-10 20:46:06,322 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 20:46:06,406 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 20:46:06,994 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 20:46:07,003 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 20:46:07,368 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 20:46:07,374 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 20:46:07,542 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 20:46:07,546 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 20:46:34,419 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8001
+ * Running on http://192.168.1.3:8001
+2025-03-10 20:46:34,420 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-10 20:46:34,421 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 20:46:34,980 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 20:46:34,985 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 20:46:59,598 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_invoice_creation.py', reloading
+2025-03-10 20:46:59,717 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_invoice_creation.py', reloading
+2025-03-10 20:46:59,760 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 20:46:59,928 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 20:46:59,930 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_invoice_creation.py', reloading
+2025-03-10 20:47:00,172 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 20:47:00,411 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_invoice_creation.py', reloading
+2025-03-10 20:47:00,702 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 20:47:01,288 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 20:47:01,295 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 20:47:01,463 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 20:47:01,472 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 20:47:01,940 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 20:47:01,948 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 20:47:02,133 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 20:47:02,138 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:21:27,424 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8001
+ * Running on http://192.168.1.3:8001
+2025-03-10 21:21:27,424 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-10 21:21:27,426 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:21:28,086 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:21:28,092 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:22:27,564 - alegra_integration - INFO - Respuesta del test de conexión: 200
+2025-03-10 21:22:27,565 - alegra_integration - INFO - Conexión exitosa: {
+  "name": "LUIS CARLOS CORREA ARRIETA",
+  "identification": "8437347",
+  "phone": "3012481020",
+  "website": "",
+  "email": "interveredanet.cr@gmail.com",
+  "regime": "No responsable de IVA",
+  "applicationVersion": "colombia",
+  "registryDate": "2022-09-30 11:52:41",
+  "timezone": "America/Bogota",
+  "profile": null,
+  "decimalPrecision": "0",
+  "calculationScale": 6,
+  "multitax": false,
+  "employeesNumber": "1-2",
+  "sector": null,
+  "showInvoiceTotalInWords": "no",
+  "showRetentionInvoice": "no",
+  "showNewLineCharOnPdf": "no",
+  "showItemReferenceOnPdf": false,
+  "additionalChargesActive": true,
+  "isActiveNoIvaDay": false,
+  "showNoIvaDaysOnItems": null,
+  "legalRepresentative": {
+    "name": "luis carlos correa arrieta",
+    "identification": "8437347",
+    "email": "interveredanet.cr@gmail.com"
+  },
+  "nameObject": {
+    "firstName": "LUIS",
+    "secondName": "CARLOS",
+    "lastName": "CORREA ARRIETA"
+  },
+  "address": {
+    "city": "Chigorod\u00f3",
+    "department": "Antioquia",
+    "address": "CLL 96a # 112a 27",
+    "zipCode": "057410"
+  },
+  "currency": {
+    "code": "COP",
+    "symbol": "$"
+  },
+  "multicurrency": false,
+  "decimalSeparator": ",",
+  "invoicePreferences": {
+    "defaultAnotation": null,
+    "defaultTermsAndConditions": "Esta factura se asimila en todos sus efectos a una letra de cambio de conformidad con el Art. 774 del c\u00f3digo de comercio. Autorizo que en caso de incumplimiento de esta obligaci\u00f3n sea reportado a las centrales de riesgo, se cobraran intereses por mora."
+  },
+  "logo": "https://d3r8o2i8390sjv.cloudfront.net/application/production/company-logos/7916955768f5fb685b15df1af2",
+  "kindOfPerson": "PERSON_ENTITY",
+  "identificationObject": {
+    "type": "NIT",
+    "number": "8437347",
+    "dv": "6",
+    "nationalityKindOfPerson": "NATIONAL"
+  },
+  "setTest": {
+    "id": "bc7dcb95-cf88-4976-bc6a-84a62189b91f",
+    "status": "AUTHORIZED"
+  },
+  "settings": {
+    "canStampInvoices": true,
+    "electronicInvoicing": true,
+    "isTypesAndNumerationsFeatureEnabled": true,
+    "electronicInvoicingWizardStep": 4,
+    "electronicInvoicingWizardProgress": "completed",
+    "statementClientAttached": true,
+    "hasSeenFAJ43b": false,
+    "canHandleThirdPartyTransactions": false,
+    "electronicInvoicingVersion": 2.1,
+    "canCreateAiuInvoice": true,
+    "canCreateHealthSectorInvoice": false,
+    "showSaleTickets": true,
+    "healthProviderCode": null,
+    "nextNumberEventForDocumentsReceived": 1,
+    "nextNumberEventForDocumentsReceivedPrefix": null,
+    "electronicResponse": true,
+    "isActiveAutomationElectronicInvoice": false,
+    "isActiveElectronicSaleTickets": false,
+    "automationElectronicInvoiceIdResolution": null,
+    "canCreateExportInvoice": false
+  }
+}
+2025-03-10 21:22:28,640 - alegra_integration - INFO - Respuesta de obtención de clientes: 200
+2025-03-10 21:22:28,641 - alegra_integration - INFO - Clientes obtenidos: 27
+2025-03-10 21:22:30,194 - alegra_integration - INFO - Respuesta de obtención de productos: 200
+2025-03-10 21:22:30,196 - alegra_integration - INFO - Productos obtenidos: 30
+2025-03-10 21:22:30,941 - alegra_integration - INFO - Respuesta de obtención de plantillas: 200
+2025-03-10 21:22:30,941 - alegra_integration - INFO - Plantilla de factura electrónica encontrada: 19
+2025-03-10 21:22:42,728 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_direct_integration.py', reloading
+2025-03-10 21:22:42,814 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_direct_integration.py', reloading
+2025-03-10 21:22:43,052 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:22:43,056 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_direct_integration.py', reloading
+2025-03-10 21:22:43,066 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_direct_integration.py', reloading
+2025-03-10 21:22:43,098 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_direct_integration.py', reloading
+2025-03-10 21:22:43,246 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:22:43,362 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:22:43,379 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:22:43,839 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:22:44,990 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:22:45,003 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:22:45,020 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:22:45,027 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:22:45,139 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:22:45,148 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:22:45,350 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:22:45,359 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:22:45,480 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:22:45,485 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:23:01,446 - alegra_integration - INFO - Respuesta del test de conexión: 200
+2025-03-10 21:23:01,446 - alegra_integration - INFO - Conexión exitosa: {
+  "name": "LUIS CARLOS CORREA ARRIETA",
+  "identification": "8437347",
+  "phone": "3012481020",
+  "website": "",
+  "email": "interveredanet.cr@gmail.com",
+  "regime": "No responsable de IVA",
+  "applicationVersion": "colombia",
+  "registryDate": "2022-09-30 11:52:41",
+  "timezone": "America/Bogota",
+  "profile": null,
+  "decimalPrecision": "0",
+  "calculationScale": 6,
+  "multitax": false,
+  "employeesNumber": "1-2",
+  "sector": null,
+  "showInvoiceTotalInWords": "no",
+  "showRetentionInvoice": "no",
+  "showNewLineCharOnPdf": "no",
+  "showItemReferenceOnPdf": false,
+  "additionalChargesActive": true,
+  "isActiveNoIvaDay": false,
+  "showNoIvaDaysOnItems": null,
+  "legalRepresentative": {
+    "name": "luis carlos correa arrieta",
+    "identification": "8437347",
+    "email": "interveredanet.cr@gmail.com"
+  },
+  "nameObject": {
+    "firstName": "LUIS",
+    "secondName": "CARLOS",
+    "lastName": "CORREA ARRIETA"
+  },
+  "address": {
+    "city": "Chigorod\u00f3",
+    "department": "Antioquia",
+    "address": "CLL 96a # 112a 27",
+    "zipCode": "057410"
+  },
+  "currency": {
+    "code": "COP",
+    "symbol": "$"
+  },
+  "multicurrency": false,
+  "decimalSeparator": ",",
+  "invoicePreferences": {
+    "defaultAnotation": null,
+    "defaultTermsAndConditions": "Esta factura se asimila en todos sus efectos a una letra de cambio de conformidad con el Art. 774 del c\u00f3digo de comercio. Autorizo que en caso de incumplimiento de esta obligaci\u00f3n sea reportado a las centrales de riesgo, se cobraran intereses por mora."
+  },
+  "logo": "https://d3r8o2i8390sjv.cloudfront.net/application/production/company-logos/7916955768f5fb685b15df1af2",
+  "kindOfPerson": "PERSON_ENTITY",
+  "identificationObject": {
+    "type": "NIT",
+    "number": "8437347",
+    "dv": "6",
+    "nationalityKindOfPerson": "NATIONAL"
+  },
+  "setTest": {
+    "id": "bc7dcb95-cf88-4976-bc6a-84a62189b91f",
+    "status": "AUTHORIZED"
+  },
+  "settings": {
+    "canStampInvoices": true,
+    "electronicInvoicing": true,
+    "isTypesAndNumerationsFeatureEnabled": true,
+    "electronicInvoicingWizardStep": 4,
+    "electronicInvoicingWizardProgress": "completed",
+    "statementClientAttached": true,
+    "hasSeenFAJ43b": false,
+    "canHandleThirdPartyTransactions": false,
+    "electronicInvoicingVersion": 2.1,
+    "canCreateAiuInvoice": true,
+    "canCreateHealthSectorInvoice": false,
+    "showSaleTickets": true,
+    "healthProviderCode": null,
+    "nextNumberEventForDocumentsReceived": 1,
+    "nextNumberEventForDocumentsReceivedPrefix": null,
+    "electronicResponse": true,
+    "isActiveAutomationElectronicInvoice": false,
+    "isActiveElectronicSaleTickets": false,
+    "automationElectronicInvoiceIdResolution": null,
+    "canCreateExportInvoice": false
+  }
+}
+2025-03-10 21:23:02,837 - alegra_integration - INFO - Respuesta de obtención de clientes: 200
+2025-03-10 21:23:02,838 - alegra_integration - INFO - Clientes obtenidos: 27
+2025-03-10 21:23:04,228 - alegra_integration - INFO - Respuesta de obtención de productos: 200
+2025-03-10 21:23:04,229 - alegra_integration - INFO - Productos obtenidos: 30
+2025-03-10 21:23:04,945 - alegra_integration - INFO - Respuesta de obtención de plantillas: 200
+2025-03-10 21:23:04,945 - alegra_integration - INFO - Plantilla de factura electrónica encontrada: 19
+2025-03-10 21:23:26,473 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_direct_integration.py', reloading
+2025-03-10 21:23:26,591 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_direct_integration.py', reloading
+2025-03-10 21:23:26,729 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:23:26,849 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:23:27,332 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_direct_integration.py', reloading
+2025-03-10 21:23:27,368 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_direct_integration.py', reloading
+2025-03-10 21:23:27,375 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_direct_integration.py', reloading
+2025-03-10 21:23:27,589 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:23:27,626 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:23:27,672 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:23:27,950 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:23:27,957 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:23:28,089 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:23:28,096 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:23:28,640 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:23:28,647 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:23:28,653 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:23:28,661 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:23:28,804 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:23:28,809 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:23:44,813 - alegra_integration - INFO - Respuesta del test de conexión: 200
+2025-03-10 21:23:44,813 - alegra_integration - INFO - Conexión exitosa: {
+  "name": "LUIS CARLOS CORREA ARRIETA",
+  "identification": "8437347",
+  "phone": "3012481020",
+  "website": "",
+  "email": "interveredanet.cr@gmail.com",
+  "regime": "No responsable de IVA",
+  "applicationVersion": "colombia",
+  "registryDate": "2022-09-30 11:52:41",
+  "timezone": "America/Bogota",
+  "profile": null,
+  "decimalPrecision": "0",
+  "calculationScale": 6,
+  "multitax": false,
+  "employeesNumber": "1-2",
+  "sector": null,
+  "showInvoiceTotalInWords": "no",
+  "showRetentionInvoice": "no",
+  "showNewLineCharOnPdf": "no",
+  "showItemReferenceOnPdf": false,
+  "additionalChargesActive": true,
+  "isActiveNoIvaDay": false,
+  "showNoIvaDaysOnItems": null,
+  "legalRepresentative": {
+    "name": "luis carlos correa arrieta",
+    "identification": "8437347",
+    "email": "interveredanet.cr@gmail.com"
+  },
+  "nameObject": {
+    "firstName": "LUIS",
+    "secondName": "CARLOS",
+    "lastName": "CORREA ARRIETA"
+  },
+  "address": {
+    "city": "Chigorod\u00f3",
+    "department": "Antioquia",
+    "address": "CLL 96a # 112a 27",
+    "zipCode": "057410"
+  },
+  "currency": {
+    "code": "COP",
+    "symbol": "$"
+  },
+  "multicurrency": false,
+  "decimalSeparator": ",",
+  "invoicePreferences": {
+    "defaultAnotation": null,
+    "defaultTermsAndConditions": "Esta factura se asimila en todos sus efectos a una letra de cambio de conformidad con el Art. 774 del c\u00f3digo de comercio. Autorizo que en caso de incumplimiento de esta obligaci\u00f3n sea reportado a las centrales de riesgo, se cobraran intereses por mora."
+  },
+  "logo": "https://d3r8o2i8390sjv.cloudfront.net/application/production/company-logos/7916955768f5fb685b15df1af2",
+  "kindOfPerson": "PERSON_ENTITY",
+  "identificationObject": {
+    "type": "NIT",
+    "number": "8437347",
+    "dv": "6",
+    "nationalityKindOfPerson": "NATIONAL"
+  },
+  "setTest": {
+    "id": "bc7dcb95-cf88-4976-bc6a-84a62189b91f",
+    "status": "AUTHORIZED"
+  },
+  "settings": {
+    "canStampInvoices": true,
+    "electronicInvoicing": true,
+    "isTypesAndNumerationsFeatureEnabled": true,
+    "electronicInvoicingWizardStep": 4,
+    "electronicInvoicingWizardProgress": "completed",
+    "statementClientAttached": true,
+    "hasSeenFAJ43b": false,
+    "canHandleThirdPartyTransactions": false,
+    "electronicInvoicingVersion": 2.1,
+    "canCreateAiuInvoice": true,
+    "canCreateHealthSectorInvoice": false,
+    "showSaleTickets": true,
+    "healthProviderCode": null,
+    "nextNumberEventForDocumentsReceived": 1,
+    "nextNumberEventForDocumentsReceivedPrefix": null,
+    "electronicResponse": true,
+    "isActiveAutomationElectronicInvoice": false,
+    "isActiveElectronicSaleTickets": false,
+    "automationElectronicInvoiceIdResolution": null,
+    "canCreateExportInvoice": false
+  }
+}
+2025-03-10 21:23:45,913 - alegra_integration - INFO - Respuesta de obtención de clientes: 200
+2025-03-10 21:23:45,914 - alegra_integration - INFO - Clientes obtenidos: 27
+2025-03-10 21:23:47,272 - alegra_integration - INFO - Respuesta de obtención de productos: 200
+2025-03-10 21:23:47,273 - alegra_integration - INFO - Productos obtenidos: 30
+2025-03-10 21:23:48,338 - alegra_integration - INFO - Respuesta de obtención de plantillas: 200
+2025-03-10 21:23:48,339 - alegra_integration - INFO - Plantilla de factura electrónica encontrada: 19
+2025-03-10 21:24:00,918 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_direct_integration.py', reloading
+2025-03-10 21:24:00,995 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_direct_integration.py', reloading
+2025-03-10 21:24:01,162 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:24:01,248 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_direct_integration.py', reloading
+2025-03-10 21:24:01,356 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:24:01,481 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:24:01,637 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_direct_integration.py', reloading
+2025-03-10 21:24:01,785 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\test_direct_integration.py', reloading
+2025-03-10 21:24:01,936 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:24:02,044 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:24:02,692 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:24:02,706 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:24:02,795 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:24:02,802 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:24:02,872 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:24:02,880 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:24:03,331 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:24:03,339 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:24:03,492 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:24:03,497 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:24:11,745 - alegra_integration - INFO - Respuesta del test de conexión: 200
+2025-03-10 21:24:11,746 - alegra_integration - INFO - Conexión exitosa: {
+  "name": "LUIS CARLOS CORREA ARRIETA",
+  "identification": "8437347",
+  "phone": "3012481020",
+  "website": "",
+  "email": "interveredanet.cr@gmail.com",
+  "regime": "No responsable de IVA",
+  "applicationVersion": "colombia",
+  "registryDate": "2022-09-30 11:52:41",
+  "timezone": "America/Bogota",
+  "profile": null,
+  "decimalPrecision": "0",
+  "calculationScale": 6,
+  "multitax": false,
+  "employeesNumber": "1-2",
+  "sector": null,
+  "showInvoiceTotalInWords": "no",
+  "showRetentionInvoice": "no",
+  "showNewLineCharOnPdf": "no",
+  "showItemReferenceOnPdf": false,
+  "additionalChargesActive": true,
+  "isActiveNoIvaDay": false,
+  "showNoIvaDaysOnItems": null,
+  "legalRepresentative": {
+    "name": "luis carlos correa arrieta",
+    "identification": "8437347",
+    "email": "interveredanet.cr@gmail.com"
+  },
+  "nameObject": {
+    "firstName": "LUIS",
+    "secondName": "CARLOS",
+    "lastName": "CORREA ARRIETA"
+  },
+  "address": {
+    "city": "Chigorod\u00f3",
+    "department": "Antioquia",
+    "address": "CLL 96a # 112a 27",
+    "zipCode": "057410"
+  },
+  "currency": {
+    "code": "COP",
+    "symbol": "$"
+  },
+  "multicurrency": false,
+  "decimalSeparator": ",",
+  "invoicePreferences": {
+    "defaultAnotation": null,
+    "defaultTermsAndConditions": "Esta factura se asimila en todos sus efectos a una letra de cambio de conformidad con el Art. 774 del c\u00f3digo de comercio. Autorizo que en caso de incumplimiento de esta obligaci\u00f3n sea reportado a las centrales de riesgo, se cobraran intereses por mora."
+  },
+  "logo": "https://d3r8o2i8390sjv.cloudfront.net/application/production/company-logos/7916955768f5fb685b15df1af2",
+  "kindOfPerson": "PERSON_ENTITY",
+  "identificationObject": {
+    "type": "NIT",
+    "number": "8437347",
+    "dv": "6",
+    "nationalityKindOfPerson": "NATIONAL"
+  },
+  "setTest": {
+    "id": "bc7dcb95-cf88-4976-bc6a-84a62189b91f",
+    "status": "AUTHORIZED"
+  },
+  "settings": {
+    "canStampInvoices": true,
+    "electronicInvoicing": true,
+    "isTypesAndNumerationsFeatureEnabled": true,
+    "electronicInvoicingWizardStep": 4,
+    "electronicInvoicingWizardProgress": "completed",
+    "statementClientAttached": true,
+    "hasSeenFAJ43b": false,
+    "canHandleThirdPartyTransactions": false,
+    "electronicInvoicingVersion": 2.1,
+    "canCreateAiuInvoice": true,
+    "canCreateHealthSectorInvoice": false,
+    "showSaleTickets": true,
+    "healthProviderCode": null,
+    "nextNumberEventForDocumentsReceived": 1,
+    "nextNumberEventForDocumentsReceivedPrefix": null,
+    "electronicResponse": true,
+    "isActiveAutomationElectronicInvoice": false,
+    "isActiveElectronicSaleTickets": false,
+    "automationElectronicInvoiceIdResolution": null,
+    "canCreateExportInvoice": false
+  }
+}
+2025-03-10 21:24:12,818 - alegra_integration - INFO - Respuesta de obtención de clientes: 200
+2025-03-10 21:24:12,819 - alegra_integration - INFO - Clientes obtenidos: 27
+2025-03-10 21:24:14,155 - alegra_integration - INFO - Respuesta de obtención de productos: 200
+2025-03-10 21:24:14,156 - alegra_integration - INFO - Productos obtenidos: 30
+2025-03-10 21:24:14,873 - alegra_integration - INFO - Respuesta de obtención de plantillas: 200
+2025-03-10 21:24:14,874 - alegra_integration - INFO - Plantilla de factura electrónica encontrada: 19
+2025-03-10 21:24:15,592 - alegra_integration - INFO - Respuesta de obtención de plantillas: 200
+2025-03-10 21:24:15,592 - alegra_integration - INFO - Plantilla de factura electrónica encontrada: 19
+2025-03-10 21:24:15,594 - alegra_integration - INFO - Datos de factura a enviar: {"date": "2025-03-10", "dueDate": "2025-03-10", "client": {"id": 23}, "items": [{"id": 45, "price": 300000.0, "quantity": 1.0}], "numberTemplate": {"id": 19}, "paymentForm": "CASH", "paymentMethod": "CASH", "payment": {"paymentMethod": {"id": 10}, "account": {"id": 1}}}
+2025-03-10 21:24:17,523 - alegra_integration - INFO - Respuesta de creación de factura: 201
+2025-03-10 21:24:17,523 - alegra_integration - INFO - Factura creada exitosamente
+2025-03-10 21:27:32,264 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8001
+ * Running on http://192.168.1.3:8001
+2025-03-10 21:27:32,264 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-03-10 21:27:32,266 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:27:32,904 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:27:32,908 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:30:19,665 - alegra_integration - INFO - Respuesta del test de conexión: 200
+2025-03-10 21:30:19,665 - alegra_integration - INFO - Conexión exitosa: {
+  "name": "LUIS CARLOS CORREA ARRIETA",
+  "identification": "8437347",
+  "phone": "3012481020",
+  "website": "",
+  "email": "interveredanet.cr@gmail.com",
+  "regime": "No responsable de IVA",
+  "applicationVersion": "colombia",
+  "registryDate": "2022-09-30 11:52:41",
+  "timezone": "America/Bogota",
+  "profile": null,
+  "decimalPrecision": "0",
+  "calculationScale": 6,
+  "multitax": false,
+  "employeesNumber": "1-2",
+  "sector": null,
+  "showInvoiceTotalInWords": "no",
+  "showRetentionInvoice": "no",
+  "showNewLineCharOnPdf": "no",
+  "showItemReferenceOnPdf": false,
+  "additionalChargesActive": true,
+  "isActiveNoIvaDay": false,
+  "showNoIvaDaysOnItems": null,
+  "legalRepresentative": {
+    "name": "luis carlos correa arrieta",
+    "identification": "8437347",
+    "email": "interveredanet.cr@gmail.com"
+  },
+  "nameObject": {
+    "firstName": "LUIS",
+    "secondName": "CARLOS",
+    "lastName": "CORREA ARRIETA"
+  },
+  "address": {
+    "city": "Chigorod\u00f3",
+    "department": "Antioquia",
+    "address": "CLL 96a # 112a 27",
+    "zipCode": "057410"
+  },
+  "currency": {
+    "code": "COP",
+    "symbol": "$"
+  },
+  "multicurrency": false,
+  "decimalSeparator": ",",
+  "invoicePreferences": {
+    "defaultAnotation": null,
+    "defaultTermsAndConditions": "Esta factura se asimila en todos sus efectos a una letra de cambio de conformidad con el Art. 774 del c\u00f3digo de comercio. Autorizo que en caso de incumplimiento de esta obligaci\u00f3n sea reportado a las centrales de riesgo, se cobraran intereses por mora."
+  },
+  "logo": "https://d3r8o2i8390sjv.cloudfront.net/application/production/company-logos/7916955768f5fb685b15df1af2",
+  "kindOfPerson": "PERSON_ENTITY",
+  "identificationObject": {
+    "type": "NIT",
+    "number": "8437347",
+    "dv": "6",
+    "nationalityKindOfPerson": "NATIONAL"
+  },
+  "setTest": {
+    "id": "bc7dcb95-cf88-4976-bc6a-84a62189b91f",
+    "status": "AUTHORIZED"
+  },
+  "settings": {
+    "canStampInvoices": true,
+    "electronicInvoicing": true,
+    "isTypesAndNumerationsFeatureEnabled": true,
+    "electronicInvoicingWizardStep": 4,
+    "electronicInvoicingWizardProgress": "completed",
+    "statementClientAttached": true,
+    "hasSeenFAJ43b": false,
+    "canHandleThirdPartyTransactions": false,
+    "electronicInvoicingVersion": 2.1,
+    "canCreateAiuInvoice": true,
+    "canCreateHealthSectorInvoice": false,
+    "showSaleTickets": true,
+    "healthProviderCode": null,
+    "nextNumberEventForDocumentsReceived": 1,
+    "nextNumberEventForDocumentsReceivedPrefix": null,
+    "electronicResponse": true,
+    "isActiveAutomationElectronicInvoice": false,
+    "isActiveElectronicSaleTickets": false,
+    "automationElectronicInvoiceIdResolution": null,
+    "canCreateExportInvoice": false
+  }
+}
+2025-03-10 21:30:21,341 - alegra_integration - INFO - Respuesta de obtención de clientes: 200
+2025-03-10 21:30:21,341 - alegra_integration - INFO - Clientes obtenidos: 27
+2025-03-10 21:30:23,036 - alegra_integration - INFO - Respuesta de obtención de productos: 200
+2025-03-10 21:30:23,036 - alegra_integration - INFO - Productos obtenidos: 30
+2025-03-10 21:30:24,358 - alegra_integration - INFO - Respuesta de obtención de plantillas: 200
+2025-03-10 21:30:24,358 - alegra_integration - INFO - Plantilla de factura electrónica encontrada: 19
+2025-03-10 21:30:51,006 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\temp_alegra_script.py', reloading
+2025-03-10 21:30:51,080 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\temp_alegra_script.py', reloading
+2025-03-10 21:30:51,226 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\temp_alegra_script.py', reloading
+2025-03-10 21:30:51,233 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:30:51,288 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\temp_alegra_script.py', reloading
+2025-03-10 21:30:51,312 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:30:51,374 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\temp_alegra_script.py', reloading
+2025-03-10 21:30:51,443 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\temp_alegra_script.py', reloading
+2025-03-10 21:30:51,541 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:30:51,698 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:30:51,700 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:30:51,858 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:30:52,502 - alegra_integration - INFO - Respuesta del test de conexión: 200
+2025-03-10 21:30:52,503 - alegra_integration - INFO - Conexión exitosa: {
+  "name": "LUIS CARLOS CORREA ARRIETA",
+  "identification": "8437347",
+  "phone": "3012481020",
+  "website": "",
+  "email": "interveredanet.cr@gmail.com",
+  "regime": "No responsable de IVA",
+  "applicationVersion": "colombia",
+  "registryDate": "2022-09-30 11:52:41",
+  "timezone": "America/Bogota",
+  "profile": null,
+  "decimalPrecision": "0",
+  "calculationScale": 6,
+  "multitax": false,
+  "employeesNumber": "1-2",
+  "sector": null,
+  "showInvoiceTotalInWords": "no",
+  "showRetentionInvoice": "no",
+  "showNewLineCharOnPdf": "no",
+  "showItemReferenceOnPdf": false,
+  "additionalChargesActive": true,
+  "isActiveNoIvaDay": false,
+  "showNoIvaDaysOnItems": null,
+  "legalRepresentative": {
+    "name": "luis carlos correa arrieta",
+    "identification": "8437347",
+    "email": "interveredanet.cr@gmail.com"
+  },
+  "nameObject": {
+    "firstName": "LUIS",
+    "secondName": "CARLOS",
+    "lastName": "CORREA ARRIETA"
+  },
+  "address": {
+    "city": "Chigorod\u00f3",
+    "department": "Antioquia",
+    "address": "CLL 96a # 112a 27",
+    "zipCode": "057410"
+  },
+  "currency": {
+    "code": "COP",
+    "symbol": "$"
+  },
+  "multicurrency": false,
+  "decimalSeparator": ",",
+  "invoicePreferences": {
+    "defaultAnotation": null,
+    "defaultTermsAndConditions": "Esta factura se asimila en todos sus efectos a una letra de cambio de conformidad con el Art. 774 del c\u00f3digo de comercio. Autorizo que en caso de incumplimiento de esta obligaci\u00f3n sea reportado a las centrales de riesgo, se cobraran intereses por mora."
+  },
+  "logo": "https://d3r8o2i8390sjv.cloudfront.net/application/production/company-logos/7916955768f5fb685b15df1af2",
+  "kindOfPerson": "PERSON_ENTITY",
+  "identificationObject": {
+    "type": "NIT",
+    "number": "8437347",
+    "dv": "6",
+    "nationalityKindOfPerson": "NATIONAL"
+  },
+  "setTest": {
+    "id": "bc7dcb95-cf88-4976-bc6a-84a62189b91f",
+    "status": "AUTHORIZED"
+  },
+  "settings": {
+    "canStampInvoices": true,
+    "electronicInvoicing": true,
+    "isTypesAndNumerationsFeatureEnabled": true,
+    "electronicInvoicingWizardStep": 4,
+    "electronicInvoicingWizardProgress": "completed",
+    "statementClientAttached": true,
+    "hasSeenFAJ43b": false,
+    "canHandleThirdPartyTransactions": false,
+    "electronicInvoicingVersion": 2.1,
+    "canCreateAiuInvoice": true,
+    "canCreateHealthSectorInvoice": false,
+    "showSaleTickets": true,
+    "healthProviderCode": null,
+    "nextNumberEventForDocumentsReceived": 1,
+    "nextNumberEventForDocumentsReceivedPrefix": null,
+    "electronicResponse": true,
+    "isActiveAutomationElectronicInvoice": false,
+    "isActiveElectronicSaleTickets": false,
+    "automationElectronicInvoiceIdResolution": null,
+    "canCreateExportInvoice": false
+  }
+}
+2025-03-10 21:30:52,755 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:30:52,762 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:30:53,177 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:30:53,184 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:30:53,505 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:30:53,515 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:30:53,680 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:30:53,684 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:30:53,685 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:30:53,697 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:30:53,703 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:30:53,710 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:30:55,129 - alegra_integration - INFO - Respuesta de obtención de clientes: 200
+2025-03-10 21:30:55,130 - alegra_integration - INFO - Clientes obtenidos: 27
+2025-03-10 21:30:56,929 - alegra_integration - INFO - Respuesta de obtención de productos: 200
+2025-03-10 21:30:56,929 - alegra_integration - INFO - Productos obtenidos: 30
+2025-03-10 21:30:58,005 - alegra_integration - INFO - Respuesta de obtención de plantillas: 200
+2025-03-10 21:30:58,006 - alegra_integration - INFO - Plantilla de factura electrónica encontrada: 19
+2025-03-10 21:31:35,209 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\temp_alegra_script.py', reloading
+2025-03-10 21:31:35,374 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:31:35,493 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\temp_alegra_script.py', reloading
+2025-03-10 21:31:35,635 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\temp_alegra_script.py', reloading
+2025-03-10 21:31:35,786 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:31:35,797 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\temp_alegra_script.py', reloading
+2025-03-10 21:31:35,819 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\temp_alegra_script.py', reloading
+2025-03-10 21:31:35,907 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:31:36,019 - werkzeug - INFO -  * Detected change in 'C:\\xampp\\htdocs\\laravel\\ventas_completa\\scripts\\temp_alegra_script.py', reloading
+2025-03-10 21:31:36,050 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:31:36,110 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:31:36,307 - werkzeug - INFO -  * Restarting with stat
+2025-03-10 21:31:36,735 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:31:36,743 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:31:36,848 - alegra_integration - INFO - Respuesta del test de conexión: 200
+2025-03-10 21:31:36,848 - alegra_integration - INFO - Conexión exitosa: {
+  "name": "LUIS CARLOS CORREA ARRIETA",
+  "identification": "8437347",
+  "phone": "3012481020",
+  "website": "",
+  "email": "interveredanet.cr@gmail.com",
+  "regime": "No responsable de IVA",
+  "applicationVersion": "colombia",
+  "registryDate": "2022-09-30 11:52:41",
+  "timezone": "America/Bogota",
+  "profile": null,
+  "decimalPrecision": "0",
+  "calculationScale": 6,
+  "multitax": false,
+  "employeesNumber": "1-2",
+  "sector": null,
+  "showInvoiceTotalInWords": "no",
+  "showRetentionInvoice": "no",
+  "showNewLineCharOnPdf": "no",
+  "showItemReferenceOnPdf": false,
+  "additionalChargesActive": true,
+  "isActiveNoIvaDay": false,
+  "showNoIvaDaysOnItems": null,
+  "legalRepresentative": {
+    "name": "luis carlos correa arrieta",
+    "identification": "8437347",
+    "email": "interveredanet.cr@gmail.com"
+  },
+  "nameObject": {
+    "firstName": "LUIS",
+    "secondName": "CARLOS",
+    "lastName": "CORREA ARRIETA"
+  },
+  "address": {
+    "city": "Chigorod\u00f3",
+    "department": "Antioquia",
+    "address": "CLL 96a # 112a 27",
+    "zipCode": "057410"
+  },
+  "currency": {
+    "code": "COP",
+    "symbol": "$"
+  },
+  "multicurrency": false,
+  "decimalSeparator": ",",
+  "invoicePreferences": {
+    "defaultAnotation": null,
+    "defaultTermsAndConditions": "Esta factura se asimila en todos sus efectos a una letra de cambio de conformidad con el Art. 774 del c\u00f3digo de comercio. Autorizo que en caso de incumplimiento de esta obligaci\u00f3n sea reportado a las centrales de riesgo, se cobraran intereses por mora."
+  },
+  "logo": "https://d3r8o2i8390sjv.cloudfront.net/application/production/company-logos/7916955768f5fb685b15df1af2",
+  "kindOfPerson": "PERSON_ENTITY",
+  "identificationObject": {
+    "type": "NIT",
+    "number": "8437347",
+    "dv": "6",
+    "nationalityKindOfPerson": "NATIONAL"
+  },
+  "setTest": {
+    "id": "bc7dcb95-cf88-4976-bc6a-84a62189b91f",
+    "status": "AUTHORIZED"
+  },
+  "settings": {
+    "canStampInvoices": true,
+    "electronicInvoicing": true,
+    "isTypesAndNumerationsFeatureEnabled": true,
+    "electronicInvoicingWizardStep": 4,
+    "electronicInvoicingWizardProgress": "completed",
+    "statementClientAttached": true,
+    "hasSeenFAJ43b": false,
+    "canHandleThirdPartyTransactions": false,
+    "electronicInvoicingVersion": 2.1,
+    "canCreateAiuInvoice": true,
+    "canCreateHealthSectorInvoice": false,
+    "showSaleTickets": true,
+    "healthProviderCode": null,
+    "nextNumberEventForDocumentsReceived": 1,
+    "nextNumberEventForDocumentsReceivedPrefix": null,
+    "electronicResponse": true,
+    "isActiveAutomationElectronicInvoice": false,
+    "isActiveElectronicSaleTickets": false,
+    "automationElectronicInvoiceIdResolution": null,
+    "canCreateExportInvoice": false
+  }
+}
+2025-03-10 21:31:37,265 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:31:37,274 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:31:37,366 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:31:37,373 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:31:37,675 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:31:37,683 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:31:37,872 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:31:37,880 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:31:38,139 - werkzeug - WARNING -  * Debugger is active!
+2025-03-10 21:31:38,146 - werkzeug - INFO -  * Debugger PIN: 861-806-681
+2025-03-10 21:31:39,450 - alegra_integration - INFO - Respuesta de obtención de clientes: 200
+2025-03-10 21:31:39,451 - alegra_integration - INFO - Clientes obtenidos: 27
+2025-03-10 21:31:41,761 - alegra_integration - INFO - Respuesta de obtención de productos: 200
+2025-03-10 21:31:41,762 - alegra_integration - INFO - Productos obtenidos: 30
+2025-03-10 21:31:43,010 - alegra_integration - INFO - Respuesta de obtención de plantillas: 200
+2025-03-10 21:31:43,010 - alegra_integration - INFO - Plantilla de factura electrónica encontrada: 19
+2025-03-10 21:31:43,460 - alegra_integration - INFO - Datos de factura a enviar: {"client": {"id": 23}, "items": [{"id": 45, "price": 300000, "quantity": 1}], "date": "2025-03-10", "dueDate": "2025-03-10", "paymentForm": "CASH", "paymentMethod": "CASH", "payment": {"paymentMethod": {"id": 10}, "account": {"id": 1}}, "numberTemplate": {"id": 19}}
+2025-03-10 21:31:45,384 - alegra_integration - INFO - Respuesta de creación de factura: 201
+2025-03-10 21:31:45,384 - alegra_integration - INFO - Factura creada exitosamente

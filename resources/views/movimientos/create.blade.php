@@ -3,7 +3,7 @@
 @section('title', 'Nuevo Movimiento Interno')
 
 @section('styles')
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<!-- Select2 CSS ya está incluido en el layout principal -->
 <style>
     .required:after {
         content: " *";
@@ -120,7 +120,7 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- Select2 JS ya está incluido en el layout principal -->
 <script>
 $(document).ready(function() {
     // Inicializar Select2

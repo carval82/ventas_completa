@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Integración con Alegra</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .card {
+            margin-bottom: 20px;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .btn-primary {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Prueba de Integración con Alegra</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Probar Conexión</h5>
+                    </div>
+                    <div class="card-body">
+                        <button id="testConnectionBtn" class="btn btn-primary">Probar Conexión</button>
+                        <pre id="connectionResult">Resultado aparecerá aquí...</pre>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Obtener Clientes</h5>
+                    </div>
+                    <div class="card-body">
+                        <button id="getClientsBtn" class="btn btn-primary">Obtener Clientes</button>
+                        <pre id="clientsResult">Resultado aparecerá aquí...</pre>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Obtener Productos</h5>
+                    </div>
+                    <div class="card-body">
+                        <button id="getProductsBtn" class="btn btn-primary">Obtener Productos</button>
+                        <pre id="productsResult">Resultado aparecerá aquí...</pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Obtener Plantillas</h5>
+                    </div>
+                    <div class="card-body">
+                        <button id="getTemplatesBtn" class="btn btn-primary">Obtener Plantillas</button>
+                        <pre id="templatesResult">Resultado aparecerá aquí...</pre>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Crear Factura</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="clientSelect" class="form-label">Cliente</label>
+                            <select id="clientSelect" class="form-select">
+                                <option value="">Seleccione un cliente...</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="productSelect" class="form-label">Producto</label>
+                            <select id="productSelect" class="form-select">
+                                <option value="">Seleccione un producto...</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">Cantidad</label>
+                            <input type="number" id="quantity" class="form-control" value="1" min="1">
+                        </div>
+                        <div class="mb-3">
+                            <label for="price" class="form-label">Precio</label>
+                            <input type="number" id="price" class="form-control" value="26000" min="0">
+                        </div>
+                        <button id="createInvoiceBtn" class="btn btn-primary">Crear Factura</button>
+                        <pre id="invoiceResult">Resultado aparecerá aquí...</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="alegra_client.js"></script>
+    <script>
+        // Función para mostrar resultados en formato JSON
+        function displayResult(elementId, data) {
+            document.getElementById(elementId).textContent = JSON.stringify(data, null, 2);
+        }
+        
+        // Probar conexión
+        document.getElementById('testConnectionBtn').addEventListener('click', async () => {
+            try {
+                const result = await testConnection();
+                displayResult('connectionResult', result);
+            } catch (error) {
+                displayResult('connectionResult', { error: error.message });
+            }
+        });
+        
+        // Obtener clientes
+        document.getElementById('getClientsBtn').addEventListener('click', async () => {
+            try {
+                const result = await getClients();
+                displayResult('clientsResult', result);
+                
+                // Llenar el select de clientes
+                if (result.success) {
+                    const clientSelect = document.getElementById('clientSelect');
+                    clientSelect.innerHTML = '<option value="">Seleccione un cliente...</option>';
+                    
+                    result.data.forEach(client => {
+                        const option = document.createElement('option');
+                        option.value = client.id;
+                        option.textContent = client.name;
+                        clientSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                displayResult('clientsResult', { error: error.message });
+            }
+        });
+        
+        // Obtener productos
+        document.getElementById('getProductsBtn').addEventListener('click', async () => {
+            try {
+                const result = await getProducts();
+                displayResult('productsResult', result);
+                
+                // Llenar el select de productos
+                if (result.success) {
+                    const productSelect = document.getElementById('productSelect');
+                    productSelect.innerHTML = '<option value="">Seleccione un producto...</option>';
+                    
+                    result.data.forEach(product => {
+                        const option = document.createElement('option');
+                        option.value = product.id;
+                        option.textContent = product.name;
+                        productSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                displayResult('productsResult', { error: error.message });
+            }
+        });
+        
+        // Obtener plantillas
+        document.getElementById('getTemplatesBtn').addEventListener('click', async () => {
+            try {
+                const result = await getTemplates();
+                displayResult('templatesResult', result);
+            } catch (error) {
+                displayResult('templatesResult', { error: error.message });
+            }
+        });
+        
+        // Crear factura
+        document.getElementById('createInvoiceBtn').addEventListener('click', async () => {
+            try {
+                const clientId = document.getElementById('clientSelect').value;
+                const productId = document.getElementById('productSelect').value;
+                const quantity = document.getElementById('quantity').value;
+                const price = document.getElementById('price').value;
+                
+                if (!clientId || !productId) {
+                    alert('Debe seleccionar un cliente y un producto');
+                    return;
+                }
+                
+                const invoiceData = {
+                    client_id: clientId,
+                    date: new Date().toISOString().split('T')[0],
+                    dueDate: new Date().toISOString().split('T')[0],
+                    items: [
+                        {
+                            id: productId,
+                            price: parseFloat(price),
+                            quantity: parseInt(quantity)
+                        }
+                    ]
+                };
+                
+                const result = await createInvoice(invoiceData);
+                displayResult('invoiceResult', result);
+            } catch (error) {
+                displayResult('invoiceResult', { error: error.message });
+            }
+        });
+    </script>
+</body>
+</html>

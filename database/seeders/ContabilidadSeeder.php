@@ -34,33 +34,32 @@ class ContabilidadSeeder extends Seeder
             ]
         ]);
 
-        // Cuentas principales
+        // Cuentas principales (usando estructura NIF/NIIF)
         $cuentas = [
-            ['1', 'ACTIVO', 'Activo'],
-            ['11', 'ACTIVO CORRIENTE', 'Activo'],
-            ['1101', 'EFECTIVO Y EQUIVALENTES', 'Activo'],
-            ['110101', 'CAJA', 'Activo'],
-            ['1102', 'CUENTAS POR COBRAR', 'Activo'],
+            ['1', 'ACTIVO'],
+            ['11', 'ACTIVO CORRIENTE'],
+            ['1101', 'EFECTIVO Y EQUIVALENTES'],
+            ['110101', 'CAJA'],
+            ['1102', 'CUENTAS POR COBRAR'],
             
-            ['2', 'PASIVO', 'Pasivo'],
-            ['21', 'PASIVO CORRIENTE', 'Pasivo'],
-            ['2101', 'PROVEEDORES', 'Pasivo'],
-            ['2408', 'IVA POR PAGAR', 'Pasivo'],
+            ['2', 'PASIVO'],
+            ['21', 'PASIVO CORRIENTE'],
+            ['2101', 'PROVEEDORES'],
+            ['2408', 'IVA POR PAGAR'],
             
-            ['4', 'INGRESOS', 'Ingreso'],
-            ['41', 'INGRESOS OPERACIONALES', 'Ingreso'],
-            ['4101', 'VENTAS', 'Ingreso'],
+            ['4', 'INGRESOS'],
+            ['41', 'INGRESOS OPERACIONALES'],
+            ['4101', 'VENTAS'],
             
-            ['5', 'GASTOS', 'Gasto'],
-            ['51', 'GASTOS OPERACIONALES', 'Gasto'],
-            ['5101', 'COSTO DE VENTAS', 'Gasto']
+            ['5', 'GASTOS'],
+            ['51', 'GASTOS OPERACIONALES'],
+            ['5101', 'COSTO DE VENTAS']
         ];
 
         foreach ($cuentas as $cuenta) {
             PlanCuenta::create([
                 'codigo' => $cuenta[0],
                 'nombre' => $cuenta[1],
-                'tipo' => $cuenta[2],
                 'nivel' => strlen($cuenta[0])/2,
                 'estado' => true
             ]);

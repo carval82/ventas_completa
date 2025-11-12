@@ -1,5 +1,9 @@
 @extends('layouts.app')
 
+@php
+use Illuminate\Support\Str;
+@endphp
+
 @section('title', 'Configuración de Empresa')
 
 @section('content')
@@ -81,11 +85,31 @@
                             <div class="card-body">
                                 <dl class="row mb-0">
                                     <dt class="col-sm-3">Resolución:</dt>
-                                    <dd class="col-sm-9">{{ $empresa->resolucion_facturacion ?: 'No registrada' }}</dd>
+                                    <dd class="col-sm-9">
+                                        @if(is_string($empresa->resolucion_facturacion) && Str::startsWith($empresa->resolucion_facturacion, '{'))
+                                            @php
+                                                $resolucion = json_decode($empresa->resolucion_facturacion, true);
+                                                echo $resolucion['texto'] ?? 'No registrada';
+                                            @endphp
+                                        @else
+                                            {{ $empresa->resolucion_facturacion ?: 'No registrada' }}
+                                        @endif
+                                    </dd>
+
+                                    <dt class="col-sm-3">Prefijo Factura:</dt>
+                                    <dd class="col-sm-9">{{ $empresa->prefijo_factura ?: 'No registrado' }}</dd>
+
+                                    <dt class="col-sm-3">ID Resolución Alegra:</dt>
+                                    <dd class="col-sm-9">{{ $empresa->id_resolucion_alegra ?: 'No registrado' }}</dd>
 
                                     <dt class="col-sm-3">Fecha Resolución:</dt>
                                     <dd class="col-sm-9">
                                         {{ $empresa->fecha_resolucion ? $empresa->fecha_resolucion->format('d/m/Y') : 'No registrada' }}
+                                    </dd>
+
+                                    <dt class="col-sm-3">Fecha Vencimiento:</dt>
+                                    <dd class="col-sm-9">
+                                        {{ $empresa->fecha_vencimiento_resolucion ? $empresa->fecha_vencimiento_resolucion->format('d/m/Y') : 'No registrada' }}
                                     </dd>
 
                                     <dt class="col-sm-3">Estado:</dt>

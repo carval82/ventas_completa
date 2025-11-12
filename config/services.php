@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'alegra' => [
+        'base_url' => env('ALEGRA_BASE_URL', 'https://api.alegra.com/api/v1'),
+        'api_key' => env('ALEGRA_API_KEY'),
+        'api_token' => env('ALEGRA_API_TOKEN'),
+    ],
+
 ];

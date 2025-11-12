@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Formulario Empresa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-4">
+    <h3>🔍 Debug: Formulario de Empresa</h3>
+    
+    <div class="alert alert-info">
+        <strong>Instrucciones:</strong>
+        <ol>
+            <li>Abre las herramientas de desarrollador (F12)</li>
+            <li>Ve a la pestaña "Console"</li>
+            <li>Llena el formulario y haz clic en "Probar Envío"</li>
+            <li>Revisa los errores en la consola</li>
+        </ol>
+    </div>
+
+    <form id="empresaForm" action="/laravel/ventas_completa/public/configuracion/empresa" method="POST">
+        <input type="hidden" name="_token" value="test-token">
+        
+        <div class="row">
+            <div class="col-md-6">
+                <label class="form-label">Nombre Comercial *</label>
+                <input type="text" name="nombre_comercial" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Razón Social *</label>
+                <input type="text" name="razon_social" class="form-control" required>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <label class="form-label">NIT *</label>
+                <input type="text" name="nit" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Teléfono *</label>
+                <input type="text" name="telefono" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control">
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-md-8">
+                <label class="form-label">Dirección *</label>
+                <input type="text" name="direccion" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Sitio Web</label>
+                <input type="url" name="sitio_web" class="form-control">
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label class="form-label">Régimen Tributario *</label>
+                <select name="regimen_tributario" class="form-select" required>
+                    <option value="">Seleccione...</option>
+                    <option value="no_responsable_iva">No Responsable de IVA</option>
+                    <option value="responsable_iva">Responsable de IVA</option>
+                    <option value="regimen_simple">Régimen Simple</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Resolución de Facturación</label>
+                <input type="text" name="resolucion_facturacion" class="form-control" value="No aplica">
+            </div>
+        </div>
+        
+        <div class="mt-3">
+            <div class="form-check">
+                <input type="checkbox" name="factura_electronica_habilitada" class="form-check-input" value="1">
+                <label class="form-check-label">Habilitar Facturación Electrónica</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" name="alegra_multiples_impuestos" class="form-check-input" value="1">
+                <label class="form-check-label">Múltiples impuestos en Alegra</label>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <button type="button" class="btn btn-primary" onclick="probarEnvio()">🧪 Probar Envío</button>
+            <button type="button" class="btn btn-info" onclick="validarCampos()">✅ Validar Campos</button>
+        </div>
+    </form>
+    
+    <div id="resultado" class="mt-4"></div>
+</div>
+
+<script>
+function validarCampos() {
+    const form = document.getElementById('empresaForm');
+    const formData = new FormData(form);
+    
+    console.log('📋 Datos del formulario:');
+    for (let [key, value] of formData.entries()) {
+        console.log(`  ${key}: ${value}`);
+    }
+    
+    // Verificar campos requeridos
+    const requeridos = ['nombre_comercial', 'razon_social', 'nit', 'telefono', 'direccion', 'regimen_tributario'];
+    let faltantes = [];
+    
+    requeridos.forEach(campo => {
+        if (!formData.get(campo)) {
+            faltantes.push(campo);
+        }
+    });
+    
+    if (faltantes.length > 0) {
+        document.getElementById('resultado').innerHTML = 
+            `<div class="alert alert-danger">❌ Campos faltantes: ${faltantes.join(', ')}</div>`;
+    } else {
+        document.getElementById('resultado').innerHTML = 
+            `<div class="alert alert-success">✅ Todos los campos requeridos están completos</div>`;
+    }
+}
+
+function probarEnvio() {
+    const form = document.getElementById('empresaForm');
+    const formData = new FormData(form);
+    
+    // Simular envío
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        console.log('📡 Respuesta del servidor:', response.status);
+        return response.text();
+    })
+    .then(data => {
+        console.log('📄 Contenido de la respuesta:', data);
+        document.getElementById('resultado').innerHTML = 
+            `<div class="alert alert-info">
+                <strong>Respuesta recibida</strong><br>
+                Revisa la consola para más detalles
+            </div>`;
+    })
+    .catch(error => {
+        console.error('❌ Error:', error);
+        document.getElementById('resultado').innerHTML = 
+            `<div class="alert alert-danger">❌ Error: ${error.message}</div>`;
+    });
+}
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 @section('title', 'Nueva Compra')
 
 @section('styles')
-<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+<!-- SweetAlert2 CSS ya está incluido en el layout principal -->
 <style>
     .cantidad-input {
         width: 80px !important;
@@ -138,13 +138,14 @@
     </div>
 </div>
                 <!-- Tabla de Productos -->
-<div class="table-responsive mt-4">
     <table class="table table-bordered" id="productos-table">
         <thead class="table-light">
             <tr>
                 <th>Código</th>
                 <th>Descripción</th>
-                <th class="text-center" style="width: 120px;">Cantidad</th>
+                <th class="text-center">Cantidad</th>
+                <th class="text-center">Unidad</th>
+                <th class="text-center">Factor Conv.</th>
                 <th class="text-end">Precio Compra</th>
                 <th class="text-end">IVA</th>
                 <th class="text-end">Subtotal</th>
@@ -153,24 +154,24 @@
         </thead>
         <tbody>
             <tr id="no-productos">
-                <td colspan="7" class="text-center">No hay productos agregados</td>
+                <td colspan="9" class="text-center">No hay productos agregados</td>
             </tr>
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="4"></td>
+                <td colspan="6"></td>
                 <th class="text-end">Subtotal:</th>
                 <td class="text-end">$<span id="subtotal-display">0.00</span></td>
                 <td></td>
             </tr>
             <tr>
-                <td colspan="4"></td>
+                <td colspan="6"></td>
                 <th class="text-end">IVA:</th>
                 <td class="text-end">$<span id="iva-display">0.00</span></td>
                 <td></td>
             </tr>
             <tr>
-                <td colspan="4"></td>
+                <td colspan="6"></td>
                 <th class="text-end">Total:</th>
                 <td class="text-end">
                     <h4 class="m-0">$<span id="total-display">0.00</span></h4>
@@ -325,7 +326,7 @@
 </div>
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- SweetAlert2 JS ya está incluido en el layout principal -->
 <script>
 $(document).ready(function() {
     // Variables globales
@@ -526,6 +527,8 @@ $(document).ready(function() {
                 nombre: producto.nombre,
                 descripcion: producto.descripcion,
                 cantidad: 1,
+                unidad_medida: producto.unidad_medida || 'UND',
+                factor_conversion: 1,
                 precio: precioTotal,
                 precio_original: precioTotal, // Guardamos el precio original
                 iva_valor: iva,
@@ -543,7 +546,7 @@ $(document).ready(function() {
         tbody.innerHTML = '';
 
         if (productos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay productos agregados</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center">No hay productos agregados</td></tr>';
             return;
         }
 
@@ -558,8 +561,28 @@ $(document).ready(function() {
                     <input type="number" 
                            class="form-control form-control-sm cantidad-input" 
                            value="${producto.cantidad}" 
-                           min="1" 
+                           min="0.001" 
+                           step="0.001"
                            onchange="actualizarCantidad(${index}, this.value)">
+                </td>
+                <td class="text-center">
+                    <select class="form-select form-select-sm" onchange="actualizarUnidad(${index}, this.value)">
+                        <option value="UND" ${producto.unidad_medida === 'UND' ? 'selected' : ''}>UND</option>
+                        <option value="KG" ${producto.unidad_medida === 'KG' ? 'selected' : ''}>KG</option>
+                        <option value="LT" ${producto.unidad_medida === 'LT' ? 'selected' : ''}>LT</option>
+                        <option value="MT" ${producto.unidad_medida === 'MT' ? 'selected' : ''}>MT</option>
+                        <option value="CAJA" ${producto.unidad_medida === 'CAJA' ? 'selected' : ''}>CAJA</option>
+                        <option value="PAQUETE" ${producto.unidad_medida === 'PAQUETE' ? 'selected' : ''}>PAQUETE</option>
+                    </select>
+                </td>
+                <td class="text-center">
+                    <input type="number" 
+                           class="form-control form-control-sm text-center" 
+                           value="${producto.factor_conversion}" 
+                           min="0.001" 
+                           step="0.001"
+                           onchange="actualizarFactorConversion(${index}, this.value)"
+                           title="Factor de conversión a unidad base">
                 </td>
                 <td class="text-end">
                     <input type="number"
@@ -577,6 +600,8 @@ $(document).ready(function() {
                     </button>
                     <input type="hidden" name="productos[${index}][id]" value="${producto.id}">
                     <input type="hidden" name="productos[${index}][cantidad]" value="${producto.cantidad}">
+                    <input type="hidden" name="productos[${index}][unidad_medida]" value="${producto.unidad_medida}">
+                    <input type="hidden" name="productos[${index}][factor_conversion]" value="${producto.factor_conversion}">
                     <input type="hidden" name="productos[${index}][precio]" value="${producto.precio}">
                 </td>
             `;
@@ -586,13 +611,26 @@ $(document).ready(function() {
 
     // Funciones de actualización de cantidad y precio
     window.actualizarCantidad = function(index, cantidad) {
-        cantidad = parseInt(cantidad);
-        if (cantidad < 1) cantidad = 1;
+        cantidad = parseFloat(cantidad);
+        if (cantidad < 0.001) cantidad = 0.001;
         
         productos[index].cantidad = cantidad;
         productos[index].subtotal = cantidad * productos[index].precio;
         actualizarTabla();
         calcularTotales();
+    }
+
+    window.actualizarUnidad = function(index, unidad) {
+        productos[index].unidad_medida = unidad;
+        actualizarTabla();
+    }
+
+    window.actualizarFactorConversion = function(index, factor) {
+        factor = parseFloat(factor);
+        if (factor < 0.001) factor = 0.001;
+        
+        productos[index].factor_conversion = factor;
+        actualizarTabla();
     }
 
     window.actualizarPrecio = function(index, precio) {

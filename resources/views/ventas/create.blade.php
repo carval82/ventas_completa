@@ -3,12 +3,18 @@
 @section('title', 'Nueva Venta')
 
 @section('styles')
-<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+<!-- SweetAlert2 CSS ya está incluido en el layout principal -->
 <style>
     .cantidad-input {
-        width: 80px !important;
+        width: 120px !important;
         text-align: center;
         margin: 0 auto;
+        font-weight: 500;
+    }
+    
+    .cantidad-input:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
     }
     
     .table th {
@@ -96,6 +102,15 @@
                                 <option value="">Seleccione una plantilla</option>
                                 <option value="FE">Factura Electrónica DIAN</option>
                             </select>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" name="generar_fe" id="generar_fe" value="1">
+                                <label class="form-check-label" for="generar_fe">
+                                    Generar factura electrónica
+                                </label>
+                                <small class="form-text text-muted d-block">
+                                    Si no marca esta opción, se creará la venta sin enviarla a Alegra.
+                                </small>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -180,7 +195,8 @@
                                 <th>Descripción</th>
                                 <th class="text-center">Stock</th>
                                 <th class="text-center">Cantidad</th>
-                                <th class="text-end">Precio</th>
+                                <th class="text-center">Unidad</th>
+                                <th class="text-end">Precio Final (IVA inc.)</th>
                                 <th class="text-end columna-iva">IVA</th>
                                 <th class="text-end">Subtotal</th>
                                 <th class="text-center">Acciones</th>
@@ -188,22 +204,22 @@
                         </thead>
                         <tbody>
                             <tr id="no-productos">
-                                <td colspan="8" class="text-center">No hay productos agregados</td>
+                                <td colspan="9" class="text-center">No hay productos agregados</td>
                             </tr>
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="5"></td>
+                                <td colspan="6"></td>
                                 <th class="text-end">Subtotal:</th>
                                 <td class="text-end" colspan="2">$<span id="subtotal-display">0.00</span></td>
                             </tr>
                             <tr class="fila-iva">
-                                <td colspan="5"></td>
+                                <td colspan="6"></td>
                                 <th class="text-end">IVA:</th>
                                 <td class="text-end" colspan="2">$<span id="iva-display">0.00</span></td>
                             </tr>
                             <tr>
-                                <td colspan="5"></td>
+                                <td colspan="6"></td>
                                 <th class="text-end">Total:</th>
                                 <td class="text-end" colspan="2">$<span id="total-display">0.00</span></td>
                             </tr>
@@ -258,7 +274,7 @@
                                                 <th>Código</th>
                                                 <th>Nombre</th>
                                                 <th class="text-center">Stock</th>
-                                                <th class="text-end">Precio</th>
+                                                <th class="text-end">Precio Final (IVA inc.)</th>
                                                 <th class="text-center">Acción</th>
                                             </tr>
                                         </thead>
@@ -275,11 +291,12 @@
                                                     @endif
                                                 </td>
                                                 <td class="text-center">{{ $producto->stock }}</td>
-                                                <td class="text-end">${{ number_format($producto->precio_venta, 2) }}</td>
+                                                <td class="text-end">${{ number_format($producto->precio_final, 2) }}</td>
                                                 <td class="text-center">
                                                     <button type="button" 
                                                             class="btn btn-sm btn-success btn-seleccionar"
                                                             data-producto='@json($producto)'
+                                                            data-id="{{ $producto->id }}"
                                                             {{ $producto->stock <= 0 ? 'disabled' : '' }}>
                                                         <i class="fas fa-plus"></i>
                                                     </button>
@@ -352,17 +369,46 @@
 @endsection
 
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- SweetAlert2 JS ya está incluido en el layout principal -->
+    <!-- Scripts de diagnóstico y pruebas -->
+    <script src="{{ asset('js/diagnostico-ventas.js') }}"></script>
+    <!-- <script src="{{ asset('js/ventas-unidades.js') }}"></script> DESACTIVADO TEMPORALMENTE -->
+    <script src="{{ asset('js/test-unidades.js') }}"></script>
     <script>
         $(document).ready(function() {
+            // Configurar CSRF token para todas las peticiones AJAX
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+            
+            console.log('🔐 CSRF Token configurado para AJAX');
+            
             // Variables globales
             window.productos = [];
             window.listaProductos = @json($productos);
             
-            console.log('Productos disponibles:', listaProductos); // Debug
+            // Productos disponibles cargados
             
             const empresa = @json($empresa);
-            const aplicaIVA = empresa.regimen === 'responsable_iva';
+            window.aplicaIVA = empresa.regimen === 'responsable_iva';
+            console.log('Empresa es responsable de IVA:', window.aplicaIVA);
+            
+            // Inicializar visibilidad de columnas IVA
+            inicializarColumnasIVA();
+            
+            // Función para inicializar visibilidad de columnas IVA
+            function inicializarColumnasIVA() {
+                if (window.aplicaIVA) {
+                    $('.columna-iva').show();
+                    $('.fila-iva').show();
+                } else {
+                    $('.columna-iva').hide();
+                    $('.fila-iva').hide();
+                }
+                console.log('Columnas IVA inicializadas. Visible:', window.aplicaIVA);
+            }
             
             async function nuevoCliente() {
                 $('.select2-cliente').val(null).trigger('change');
@@ -453,14 +499,14 @@
             $('select[name="cliente_id"]').val(estado.cliente_id).trigger('change');
         }
         
-        actualizarTabla();
+        // actualizarTabla();
         calcularTotales();
     }
 
     // Si hay un producto recién creado, agregarlo a la lista
     @if(session('producto_creado'))
     const producto = JSON.parse(@json(session('producto_creado')));
-    seleccionarProducto(producto);
+    agregarProducto(producto);
     localStorage.removeItem('estadoVentaTemp');
     @endif
 
@@ -520,33 +566,91 @@
                     
                     if (!busqueda) return;
                     
-                    // Primero buscar por código exacto (para código de barras)
-                    let producto = listaProductos.find(p => 
-                        p.codigo.toLowerCase() === busqueda
-                    );
-                    
-                    // Si no encuentra por código, buscar por nombre
-                    if (!producto) {
-                        producto = listaProductos.find(p => 
-                            p.nombre.toLowerCase().includes(busqueda)
-                        );
-                    }
+                    // Primero intentar buscar localmente
+                    let producto = buscarProductoLocal(busqueda);
                     
                     if (producto) {
                         agregarProducto(producto);
                         $(this).val('').focus(); // Limpiar y mantener foco
                     } else {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Producto no encontrado',
-                            text: 'No se encontró ningún producto con ese código o nombre',
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
-                        $(this).select(); // Seleccionar texto para facilitar nueva búsqueda
+                        // Si no se encuentra localmente, buscar en la API (incluye códigos relacionados)
+                        buscarProductoAPI(busqueda);
                     }
                 }
             });
+            
+            // Función para buscar producto localmente
+            function buscarProductoLocal(busqueda) {
+                // Primero buscar por código exacto (para código de barras)
+                let producto = listaProductos.find(p => 
+                    p.codigo.toLowerCase() === busqueda
+                );
+                
+                // Si no encuentra por código, buscar por nombre
+                if (!producto) {
+                    producto = listaProductos.find(p => 
+                        p.nombre.toLowerCase().includes(busqueda)
+                    );
+                }
+                
+                return producto;
+            }
+            
+            // Función para buscar producto en la API (incluye códigos relacionados)
+            function buscarProductoAPI(codigo) {
+                // Mostrar indicador de carga
+                const busquedaInput = $('#busqueda-producto');
+                busquedaInput.prop('disabled', true);
+                
+                $.ajax({
+                    url: '{{ route("api.productos.buscar-por-codigo") }}',
+                    type: 'GET',
+                    data: { codigo: codigo },
+                    success: function(response) {
+                        busquedaInput.prop('disabled', false);
+                        
+                        if (response.success) {
+                            const producto = response.data;
+                            
+                            // Agregar el producto a la venta
+                            agregarProducto(producto);
+                            busquedaInput.val('').focus();
+                            
+                            // Mostrar notificación si es un código relacionado
+                            if (response.is_related_code) {
+                                Swal.fire({
+                                    icon: 'info',
+                                    title: 'Código relacionado',
+                                    text: `Se ha agregado "${producto.nombre}" usando un código relacionado`,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            }
+                        } else {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Producto no encontrado',
+                                text: 'No se encontró ningún producto con ese código o nombre',
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
+                            busquedaInput.select(); // Seleccionar texto para facilitar nueva búsqueda
+                        }
+                    },
+                    error: function() {
+                        busquedaInput.prop('disabled', false);
+                        
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Hubo un problema al buscar el producto',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                        busquedaInput.select();
+                    }
+                });
+            }
 
             // Asegurar que el input de búsqueda mantenga el foco
             $(document).ready(function() {
@@ -556,8 +660,27 @@
             // Delegación de eventos para los botones de selección
             $(document).on('click', '.btn-seleccionar', function() {
                 const producto = $(this).data('producto');
-                agregarProducto(producto);
+                if (producto) {
+                    agregarProducto(producto);
+                } else {
+                    console.error('No se encontró el producto');
+                }
             });
+
+            // Función para identificar si un producto es un servicio
+            function esServicio(nombre) {
+                const nombreLower = nombre.toLowerCase();
+                const palabrasServicio = [
+                    'servicio', 'instalacion', 'instalación', 'mantenimiento', 
+                    'reparacion', 'reparación', 'soporte', 'configuracion', 
+                    'configuración', 'mano de obra', 'licencia', 'internet', 
+                    'kaspersky', 'office', 'windows', 'implementacion', 
+                    'implementación', 'revision', 'revisión', 'reubicacion',
+                    'reubicación', 'desinstalacion', 'desinstalación'
+                ];
+                
+                return palabrasServicio.some(palabra => nombreLower.includes(palabra));
+            }
 
             // Función para agregar producto (ya sea por escaneo o selección manual)
             function agregarProducto(producto) {
@@ -567,8 +690,8 @@
                 const existente = productos.find(p => p.id === producto.id);
                 
                 if (existente) {
-                    // Si existe, incrementar cantidad si hay stock
-                    if (existente.cantidad < producto.stock) {
+                    // Si existe, incrementar cantidad si hay stock o es servicio
+                    if (esServicio(producto.nombre) || existente.cantidad < producto.stock) {
                         existente.cantidad++;
                         actualizarTablaProductos();
                     } else {
@@ -582,27 +705,38 @@
                     }
                 } else {
                     // Si no existe, agregarlo como nuevo
+                    // Asegurarse que siempre tengamos precio_final y precio_venta correctos
+                    const precio_final = parseFloat(producto.precio_final) || parseFloat(producto.precio_venta * (1 + (producto.iva / 100)));
+                    const precio_venta = parseFloat(producto.precio_venta) || parseFloat(precio_final / (1 + (producto.iva / 100)));
+                    
                     productos.push({
                         id: producto.id,
                         codigo: producto.codigo,
                         nombre: producto.nombre,
                         stock: parseInt(producto.stock),
                         cantidad: 1,
-                        precio_venta: parseFloat(producto.precio_venta)
+                        precio_venta: precio_venta,
+                        precio_final: precio_final,
+                        precio_original: precio_venta, // Guardar precio original
+                        iva: parseFloat(producto.iva || 0),
+                        es_servicio: esServicio(producto.nombre)
                     });
                     actualizarTablaProductos();
                 }
+                
+                // Asegurar visibilidad de columnas IVA
+                inicializarColumnasIVA();
+                
+                // Mantener foco en el input de búsqueda
+                $('#busqueda-producto').val('').focus();
             }
 
             // Modificar la función actualizarTablaProductos
             function actualizarTablaProductos() {
                 const tbody = $('#productos-table tbody');
                 
-                // Ocultar/Mostrar columnas de IVA según régimen
-                if (!aplicaIVA) {
-                    $('.columna-iva').hide();
-                    $('.fila-iva').hide();
-                }
+                // Asegurar visibilidad de columnas IVA según régimen de empresa
+                inicializarColumnasIVA();
                 
                 tbody.empty();
 
@@ -610,14 +744,19 @@
                 $('input[name^="productos"]').remove();
 
                 if (productos.length === 0) {
-                    tbody.html(`<tr><td colspan="${aplicaIVA ? 8 : 7}" class="text-center">No hay productos agregados</td></tr>`);
+                    tbody.html(`<tr><td colspan="${window.aplicaIVA ? 9 : 8}" class="text-center">No hay productos agregados</td></tr>`);
                     return;
                 }
 
                 productos.forEach((producto, index) => {
-                    const subtotal = producto.cantidad * producto.precio_venta;
-                    const iva = aplicaIVA ? Math.round(subtotal * (empresa.porcentaje_iva / 100)) : 0;
-                    const subtotal_sin_iva = aplicaIVA ? subtotal - iva : subtotal;
+                    // Usar precio_final si está disponible, de lo contrario calcular desde precio_venta
+                    const precio_mostrar = producto.precio_final || (producto.precio_venta * (1 + (producto.iva / 100)));
+                    const subtotal_producto = producto.cantidad * precio_mostrar;
+                    
+                    // Calcular el precio sin IVA y el valor del IVA
+                    const precio_sin_iva = producto.precio_venta || (precio_mostrar / (1 + (producto.iva / 100)));
+                    const subtotal_sin_iva = producto.cantidad * precio_sin_iva;
+                    const iva = subtotal_producto - subtotal_sin_iva;
 
                     tbody.append(`
                         <tr id="producto-${producto.id}">
@@ -627,16 +766,43 @@
                             <td class="text-center">
                                 <input type="number" 
                                        class="form-control cantidad-input" 
-                                       value="${producto.cantidad}"
-                                       min="1"
+                                       value="${parseFloat(producto.cantidad).toFixed(3)}"
+                                       min="0.001"
+                                       step="0.001"
                                        max="${producto.stock}"
                                        onchange="actualizarCantidad(${index}, this.value)"
+                                       oninput="recalcularEnTiempoReal(${index}, this.value)"
                                        onclick="this.select()"
-                                       style="width: 80px; text-align: center; margin: 0 auto;">
+                                       style="width: 120px; text-align: center; margin: 0 auto;">
                             </td>
-                            <td class="text-end">${producto.precio_venta.toLocaleString()}</td>
-                            ${aplicaIVA ? `<td class="text-end columna-iva">${iva.toLocaleString()}</td>` : ''}
-                            <td class="text-end">${subtotal_sin_iva.toLocaleString()}</td>
+                            <td class="text-center">
+                                <select class="form-select form-select-sm selector-unidades" 
+                                        data-producto-id="${producto.id}"
+                                        data-index="${index}"
+                                        onchange="cambiarUnidadNueva(${index}, this.value)"
+                                        style="width: 80px; font-size: 11px;">
+                                    <option value="${producto.unidad_medida || 'unidad'}" selected>
+                                        ${(producto.unidad_medida || 'unidad').toUpperCase()}
+                                    </option>
+                                </select>
+                            </td>
+                            <td class="text-end">
+                                ${producto.es_servicio ? 
+                                    `<input type="number" 
+                                           class="form-control precio-servicio-input" 
+                                           value="${precio_mostrar.toFixed(0)}"
+                                           min="1"
+                                           step="1"
+                                           onchange="actualizarPrecioServicio(${index}, this.value)"
+                                           onclick="this.select()"
+                                           style="width: 120px; text-align: right; margin: 0 auto;"
+                                           title="Precio editable para servicio">` 
+                                    : 
+                                    `$${precio_mostrar.toLocaleString()}`
+                                }
+                            </td>
+                            ${window.aplicaIVA ? `<td class="text-end columna-iva">$${iva.toLocaleString()}</td>` : ''}
+                            <td class="text-end">$${subtotal_producto.toLocaleString()}</td>
                             <td class="text-center">
                                 <button type="button" class="btn btn-sm btn-danger" onclick="eliminarProducto(${index})">
                                     <i class="fas fa-trash"></i>
@@ -645,27 +811,145 @@
                         </tr>
                     `);
 
+                    // Calcular precio final si no existe
+                    const precio_final = producto.precio_final || (producto.precio_venta * (1 + (producto.iva / 100)));
+                    
                     // Agregar campos ocultos para enviar al servidor
                     $('#ventaForm').append(`
                         <input type="hidden" name="productos[${index}][id]" value="${producto.id}">
                         <input type="hidden" name="productos[${index}][cantidad]" value="${producto.cantidad}">
                         <input type="hidden" name="productos[${index}][precio]" value="${producto.precio_venta}">
+                        <input type="hidden" name="productos[${index}][precio_final]" value="${precio_final}">
+                        <input type="hidden" name="productos[${index}][precio_original]" value="${producto.precio_original || producto.precio_venta}">
+                        <input type="hidden" name="productos[${index}][es_servicio]" value="${producto.es_servicio ? 1 : 0}">
+                        <input type="hidden" name="productos[${index}][iva]" value="${producto.iva || 0}">
                     `);
+                });
+
+                // Cargar unidades disponibles para cada selector
+                console.log('🔄 Cargando unidades para todos los productos...');
+                productos.forEach((producto, index) => {
+                    console.log(`🔍 Cargando unidades para producto ${producto.id} (${producto.nombre}) en índice ${index}`);
+                    cargarUnidadesDisponibles(producto.id, index);
                 });
 
                 calcularTotales();
             }
 
-            // Modificar la función actualizarCantidad para que sea accesible globalmente
-            window.actualizarCantidad = function(index, cantidad) {
-                cantidad = parseInt(cantidad);
+            // Función para actualizar precio de servicios
+            window.actualizarPrecioServicio = function(index, nuevoPrecio) {
+                nuevoPrecio = parseFloat(nuevoPrecio);
                 
                 if (!productos[index]) {
                     console.error('Producto no encontrado en índice:', index);
                     return;
                 }
 
-                if (cantidad < 1) cantidad = 1;
+                if (isNaN(nuevoPrecio) || nuevoPrecio < 1) {
+                    nuevoPrecio = productos[index].precio_original || productos[index].precio_venta;
+                }
+
+                // Actualizar el precio del servicio
+                productos[index].precio_venta = nuevoPrecio;
+                
+                // Para régimen no responsable de IVA, precio_final = precio_venta
+                // Para responsable de IVA, precio_final = precio_venta + IVA
+                if (window.aplicaIVA && productos[index].iva > 0) {
+                    productos[index].precio_final = nuevoPrecio * (1 + (productos[index].iva / 100));
+                } else {
+                    productos[index].precio_final = nuevoPrecio;
+                }
+                
+                console.log(`💰 Precio de servicio actualizado:`, {
+                    producto: productos[index].nombre,
+                    precio_anterior: productos[index].precio_original,
+                    precio_nuevo: nuevoPrecio,
+                    precio_final: productos[index].precio_final,
+                    aplica_iva: window.aplicaIVA,
+                    porcentaje_iva: productos[index].iva
+                });
+
+                // Actualizar la fila visual inmediatamente
+                actualizarFilaProducto(index);
+                
+                // Recalcular totales
+                calcularTotales();
+                
+                // Actualizar campos ocultos
+                actualizarCamposOcultos();
+            };
+
+            // Función para actualizar una fila específica del producto
+            function actualizarFilaProducto(index) {
+                const producto = productos[index];
+                if (!producto) return;
+
+                // Calcular valores actualizados
+                const precio_mostrar = producto.precio_final || producto.precio_venta;
+                const subtotal_producto = producto.cantidad * precio_mostrar;
+                
+                // Calcular el precio sin IVA y el valor del IVA
+                const precio_sin_iva = window.aplicaIVA && producto.iva > 0 ? 
+                    (precio_mostrar / (1 + (producto.iva / 100))) : precio_mostrar;
+                const subtotal_sin_iva = producto.cantidad * precio_sin_iva;
+                const iva = window.aplicaIVA ? (subtotal_producto - subtotal_sin_iva) : 0;
+
+                // Actualizar la celda del precio
+                const filaProducto = $(`#producto-${producto.id}`);
+                if (filaProducto.length) {
+                    // Actualizar precio (mantener el input editable para servicios)
+                    if (producto.es_servicio) {
+                        filaProducto.find('.precio-servicio-input').val(precio_mostrar.toFixed(0));
+                    }
+                    
+                    // Actualizar IVA si aplica
+                    if (window.aplicaIVA) {
+                        filaProducto.find('.columna-iva').text('$' + iva.toLocaleString());
+                    }
+                    
+                    // Actualizar subtotal
+                    filaProducto.find('td:last-child').prev().text('$' + subtotal_producto.toLocaleString());
+                }
+
+                console.log(`🔄 Fila actualizada para producto ${producto.nombre}:`, {
+                    precio_mostrar: precio_mostrar,
+                    subtotal: subtotal_producto,
+                    iva: iva,
+                    aplica_iva: window.aplicaIVA
+                });
+            }
+
+            // Función para actualizar campos ocultos
+            function actualizarCamposOcultos() {
+                // Limpiar campos ocultos existentes
+                $('input[name^="productos"]').remove();
+                
+                // Recrear campos ocultos con valores actualizados
+                productos.forEach((producto, index) => {
+                    const precio_final = producto.precio_final || (producto.precio_venta * (1 + (producto.iva / 100)));
+                    
+                    $('#ventaForm').append(`
+                        <input type="hidden" name="productos[${index}][id]" value="${producto.id}">
+                        <input type="hidden" name="productos[${index}][cantidad]" value="${producto.cantidad}">
+                        <input type="hidden" name="productos[${index}][precio]" value="${producto.precio_venta}">
+                        <input type="hidden" name="productos[${index}][precio_final]" value="${precio_final}">
+                        <input type="hidden" name="productos[${index}][precio_original]" value="${producto.precio_original || producto.precio_venta}">
+                        <input type="hidden" name="productos[${index}][es_servicio]" value="${producto.es_servicio ? 1 : 0}">
+                        <input type="hidden" name="productos[${index}][iva]" value="${producto.iva || 0}">
+                    `);
+                });
+            }
+
+            // Modificar la función actualizarCantidad para que sea accesible globalmente
+            window.actualizarCantidad = function(index, cantidad) {
+                cantidad = parseFloat(cantidad);
+                
+                if (!productos[index]) {
+                    console.error('Producto no encontrado en índice:', index);
+                    return;
+                }
+
+                if (isNaN(cantidad) || cantidad < 0.001) cantidad = 0.001;
                 if (cantidad > productos[index].stock) {
                     Swal.fire({
                         icon: 'warning',
@@ -677,10 +961,91 @@
                     cantidad = productos[index].stock;
                 }
 
-                productos[index].cantidad = cantidad;
+                // Redondear a 3 decimales
+                productos[index].cantidad = Math.round(cantidad * 1000) / 1000;
                 actualizarTablaProductos();
                 calcularTotales(); // Asegurarnos que se actualicen los totales
             };
+
+            // Función para recálculo en tiempo real mientras se escribe
+            window.recalcularEnTiempoReal = function(index, cantidad) {
+                if (!productos[index]) return;
+                
+                cantidad = parseFloat(cantidad);
+                if (isNaN(cantidad) || cantidad < 0) return;
+                
+                // Actualizar solo los cálculos sin regenerar toda la tabla
+                const fila = document.getElementById(`producto-${productos[index].id}`);
+                if (!fila) return;
+                
+                const producto = productos[index];
+                const precio_mostrar = producto.precio_final || (producto.precio_venta * (1 + (producto.iva / 100)));
+                const subtotal_producto = cantidad * precio_mostrar;
+                
+                // Actualizar subtotal en la fila
+                const celdaSubtotal = fila.querySelector('td:nth-last-child(2)');
+                if (celdaSubtotal) {
+                    celdaSubtotal.textContent = subtotal_producto.toLocaleString();
+                }
+                
+                // Actualizar IVA si aplica
+                if (window.aplicaIVA) {
+                    const precio_sin_iva = producto.precio_venta || (precio_mostrar / (1 + (producto.iva / 100)));
+                    const subtotal_sin_iva = cantidad * precio_sin_iva;
+                    const iva = subtotal_producto - subtotal_sin_iva;
+                    
+                    const celdaIva = fila.querySelector('.columna-iva');
+                    if (celdaIva) {
+                        celdaIva.textContent = iva.toLocaleString();
+                    }
+                }
+                
+                // Recalcular totales generales
+                calcularTotalesRapido();
+            };
+            
+            // Función para calcular totales sin regenerar tabla
+            function calcularTotalesRapido() {
+                let subtotal_sin_iva = 0;
+                let iva_total = 0;
+                let total = 0;
+
+                // Leer valores actuales de la tabla
+                document.querySelectorAll('#productos-table tbody tr').forEach(fila => {
+                    if (fila.id && fila.id.startsWith('producto-')) {
+                        const inputCantidad = fila.querySelector('.cantidad-input');
+                        const celdaSubtotal = fila.querySelector('td:nth-last-child(2)');
+                        const celdaIva = fila.querySelector('.columna-iva');
+                        
+                        if (inputCantidad && celdaSubtotal) {
+                            const cantidad = parseFloat(inputCantidad.value) || 0;
+                            const subtotalTexto = celdaSubtotal.textContent.replace(/[,]/g, '');
+                            const subtotalProducto = parseFloat(subtotalTexto) || 0;
+                            
+                            total += subtotalProducto;
+                            
+                            if (celdaIva && window.aplicaIVA) {
+                                const ivaTexto = celdaIva.textContent.replace(/[,]/g, '');
+                                const ivaProducto = parseFloat(ivaTexto) || 0;
+                                iva_total += ivaProducto;
+                                subtotal_sin_iva += (subtotalProducto - ivaProducto);
+                            } else {
+                                subtotal_sin_iva += subtotalProducto;
+                            }
+                        }
+                    }
+                });
+
+                // Actualizar displays
+                $('#subtotal-display').text(subtotal_sin_iva.toLocaleString());
+                $('#iva-display').text(iva_total.toLocaleString());
+                $('#total-display').text(total.toLocaleString());
+
+                // Actualizar campos ocultos
+                $('input[name="subtotal"]').val(subtotal_sin_iva);
+                $('input[name="iva"]').val(iva_total);
+                $('input[name="total"]').val(total);
+            }
 
             window.eliminarProducto = function(index) {
                 Swal.fire({
@@ -703,43 +1068,47 @@
 
             // Modificar la función calcularTotales
             function calcularTotales() {
-                let total = 0;
+                let subtotal_sin_iva = 0;
                 let iva_total = 0;
+                let total = 0;
 
                 productos.forEach(producto => {
-                    const subtotal = producto.cantidad * producto.precio_venta;
-                    if (aplicaIVA) {
-                        const iva = Math.round(subtotal * (empresa.porcentaje_iva / 100));
+                    // Usar precio_final si está disponible, de lo contrario calcular desde precio_venta
+                    const precio_final = producto.precio_final || (producto.precio_venta * (1 + (producto.iva / 100)));
+                    const subtotal_producto = producto.cantidad * precio_final;
+                    
+                    // Calcular el precio sin IVA y el valor del IVA
+                    const precio_sin_iva = producto.precio_venta || (precio_final / (1 + (producto.iva / 100)));
+                    const subtotal_sin_iva_producto = producto.cantidad * precio_sin_iva;
+                    
+                    // Acumular totales
+                    subtotal_sin_iva += subtotal_sin_iva_producto;
+                    total += subtotal_producto;
+                    
+                    if (window.aplicaIVA) {
+                        const iva = subtotal_producto - subtotal_sin_iva_producto;
                         iva_total += iva;
-                        total += subtotal;
-                    } else {
-                        total += subtotal;
                     }
                 });
 
-                const subtotal = aplicaIVA ? total - iva_total : total;
-
-                $('#subtotal-display').text(subtotal.toLocaleString());
+                $('#subtotal-display').text(subtotal_sin_iva.toLocaleString());
                 $('#iva-display').text(iva_total.toLocaleString());
                 $('#total-display').text(total.toLocaleString());
 
-                $('input[name="subtotal"]').val(subtotal);
+                $('input[name="subtotal"]').val(subtotal_sin_iva);
                 $('input[name="iva"]').val(iva_total);
                 $('input[name="total"]').val(total);
+                
+                // Asegurar que las columnas de IVA tengan la visibilidad correcta
+                inicializarColumnasIVA();
             }
 
             // Modificar el evento change del tipo de factura
             $('#tipo_factura').on('change', function() {
                 const tipoFactura = $(this).val();
                 
-                // Ocultar/Mostrar columnas de IVA según régimen
-                if (tipoFactura === 'simplificada') {
-                    $('.columna-iva').hide();
-                    $('.fila-iva').hide();
-                } else {
-                    $('.columna-iva').show();
-                    $('.fila-iva').show();
-                }
+                // Asegurar visibilidad de columnas IVA según régimen
+                inicializarColumnasIVA();
 
                 // Manejar plantilla de factura electrónica
                 if (tipoFactura === 'electronica') {
@@ -775,7 +1144,7 @@
             // Asegurarnos que el valor de la plantilla se incluya en el formulario
             $('#ventaForm').on('submit', function(e) {
                 e.preventDefault();
-                
+
                 if (productos.length === 0) {
                     Swal.fire('Error', 'Debe agregar al menos un producto', 'error');
                     return;
@@ -860,18 +1229,38 @@
                 method: 'POST',
                 data: form.serialize(),
                 success: function(response) {
-                    console.log('Respuesta completa:', response); // Debug
+                    // Procesar respuesta del servidor
 
                     try {
                         if (typeof response === 'string') {
                             response = JSON.parse(response);
                         }
 
-                        console.log('URLs:', {
-                            print: response.print_url,
-                            redirect: response.redirect_url
-                        }); // Debug
+                        // URLs de respuesta procesadas
 
+                        // Verificar si hubo éxito en la venta pero error en la factura electrónica
+                        if (response.success && response.fe_success === false) {
+                            Swal.fire({
+                                title: 'Venta Creada',
+                                text: 'La venta se ha creado correctamente, pero hubo un error al generar la factura electrónica. ¿Desea intentar generar la factura electrónica más tarde?',
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonText: 'Sí, intentar más tarde',
+                                cancelButtonText: 'No, continuar sin factura electrónica',
+                                allowOutsideClick: false
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    // Redirigir a la página de la venta
+                                    window.location.href = response.data.show_url || '/ventas/' + response.data.id;
+                                } else {
+                                    // Redirigir al listado de ventas o a nueva venta
+                                    window.location.href = response.redirect_url || '/ventas/create';
+                                }
+                            });
+                            return;
+                        }
+
+                        // Si todo fue exitoso
                         Swal.fire({
                             icon: 'success',
                             title: 'Venta Realizada',
@@ -882,17 +1271,23 @@
                             allowOutsideClick: false
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                const printWindow = window.open(response.print_url, '_blank');
+                                // Abrir ventana de impresión
+                                const printUrl = response.print_url || `/ventas/print/${response.data.id}`;
+                                const printWindow = window.open(printUrl, '_blank');
+                                
                                 if (!printWindow) {
                                     console.error('Bloqueador de popups detectado');
                                     alert('Por favor, permita las ventanas emergentes para imprimir');
                                 }
+                                
+                                // Refrescar el formulario para crear otra venta
+                                setTimeout(() => {
+                                    window.location.href = '/ventas/create';
+                                }, 500);
+                            } else {
+                                // Refrescar para crear nueva venta
+                                window.location.href = '/ventas/create';
                             }
-                            
-                            // Pequeño delay antes de redireccionar
-                            setTimeout(() => {
-                                window.location.href = response.redirect_url;
-                            }, 1000);
                         });
                     } catch (e) {
                         console.error('Error al procesar respuesta:', e, response);
@@ -930,14 +1325,56 @@
     $('#productosModal').on('hidden.bs.modal', function () {
         $('#busqueda-producto').focus();
     });
+            
+            // Filtrar productos en el modal
+            $('#modal-busqueda').on('keyup', function() {
+                const busqueda = $(this).val().trim().toLowerCase();
+                
+                if (busqueda.length < 2) {
+                    // Si la búsqueda es muy corta, mostrar todos los productos
+                    $('#tabla-productos-modal tbody tr').show();
+                    return;
+                }
+                
+                // Primero filtrar por código y nombre (búsqueda local)
+                $('#tabla-productos-modal tbody tr').each(function() {
+                    const codigo = $(this).find('td:eq(0)').text().toLowerCase();
+                    const nombre = $(this).find('td:eq(1)').text().toLowerCase();
+                    
+                    if (codigo.includes(busqueda) || nombre.includes(busqueda)) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+                
+                // Luego buscar en códigos relacionados (una sola petición AJAX)
+                $.ajax({
+                    url: '{{ route("api.productos.buscar-por-codigo-relacionado") }}',
+                    type: 'GET',
+                    data: { codigo: busqueda },
+                    success: function(response) {
+                        if (response.success && response.productos_ids.length > 0) {
+                            // Mostrar productos que coinciden con los IDs encontrados
+                            $('#tabla-productos-modal tbody tr').each(function() {
+                                const productoId = $(this).find('button.btn-seleccionar').data('id');
+                                if (response.productos_ids.includes(productoId)) {
+                                    $(this).show();
+                                }
+                            });
+                        }
+                    }
+                });
+            });
 
-    // Prevenir envío del formulario al presionar Enter
-    $('#ventaForm').on('keypress', function(e) {
-        if (e.which === 13) {
-            e.preventDefault();
-            return false;
-        }
-    });
+            // Prevenir envío del formulario al presionar Enter
+            $('#ventaForm').on('keypress', function(e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+
     // Funciones de ventas temporales
 window.guardarVentaTemp = function() {
     if (!productos.length) {
@@ -1117,18 +1554,38 @@ $('#btnConfirmarVenta').off('click').on('click', function() {
         method: 'POST',
         data: form.serialize(),
         success: function(response) {
-            console.log('Respuesta completa:', response); // Debug
+            // Procesar respuesta del servidor
 
             try {
                 if (typeof response === 'string') {
                     response = JSON.parse(response);
                 }
 
-                console.log('URLs:', {
-                    print: response.print_url,
-                    redirect: response.redirect_url
-                }); // Debug
+                // URLs de respuesta procesadas
 
+                // Verificar si hubo éxito en la venta pero error en la factura electrónica
+                if (response.success && response.fe_success === false) {
+                    Swal.fire({
+                        title: 'Venta Creada',
+                        text: 'La venta se ha creado correctamente, pero hubo un error al generar la factura electrónica. ¿Desea intentar generar la factura electrónica más tarde?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, intentar más tarde',
+                        cancelButtonText: 'No, continuar sin factura electrónica',
+                        allowOutsideClick: false
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Redirigir a la página de la venta
+                            window.location.href = response.data.show_url || '/ventas/' + response.data.id;
+                        } else {
+                            // Redirigir al listado de ventas o a nueva venta
+                            window.location.href = response.redirect_url || '/ventas/create';
+                        }
+                    });
+                    return;
+                }
+
+                // Si todo fue exitoso
                 Swal.fire({
                     icon: 'success',
                     title: 'Venta Realizada',
@@ -1139,17 +1596,23 @@ $('#btnConfirmarVenta').off('click').on('click', function() {
                     allowOutsideClick: false
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        const printWindow = window.open(response.print_url, '_blank');
+                        // Abrir ventana de impresión
+                        const printUrl = response.print_url || `/ventas/print/${response.data.id}`;
+                        const printWindow = window.open(printUrl, '_blank');
+                        
                         if (!printWindow) {
                             console.error('Bloqueador de popups detectado');
                             alert('Por favor, permita las ventanas emergentes para imprimir');
                         }
+                        
+                        // Refrescar el formulario para crear otra venta
+                        setTimeout(() => {
+                            window.location.href = '/ventas/create';
+                        }, 500);
+                    } else {
+                        // Refrescar para crear nueva venta
+                        window.location.href = '/ventas/create';
                     }
-                    
-                    // Pequeño delay antes de redireccionar
-                    setTimeout(() => {
-                        window.location.href = response.redirect_url;
-                    }, 1000);
                 });
             } catch (e) {
                 console.error('Error al procesar respuesta:', e, response);
@@ -1177,6 +1640,225 @@ $('#btnConfirmarVenta').off('click').on('click', function() {
         }
     });
 });
+
+// Función para cargar unidades disponibles
+function cargarUnidadesDisponibles(productoId, index) {
+    console.log(`🔍 Cargando unidades para producto ${productoId}, índice ${index}`);
+    
+    $.ajax({
+        url: '/api/conversiones/unidades-disponibles',
+        method: 'GET',
+        data: { producto_id: productoId },
+        success: function(response) {
+            console.log(`✅ Respuesta API para producto ${productoId}:`, response);
+            
+            if (response.success && response.data.unidades) {
+                const selector = document.querySelector(`select[data-index="${index}"]`);
+                console.log(`🎯 Selector encontrado:`, selector);
+                
+                if (selector) {
+                    const unidadActual = selector.value;
+                    console.log(`📝 Unidad actual: ${unidadActual}`);
+                    
+                    // Limpiar opciones existentes
+                    selector.innerHTML = '';
+                    
+                    // Agregar nuevas opciones
+                    response.data.unidades.forEach(unidad => {
+                        const option = document.createElement('option');
+                        option.value = unidad.codigo;
+                        option.textContent = unidad.codigo.toUpperCase();
+                        
+                        if (unidad.codigo === unidadActual || unidad.codigo === response.data.unidad_base) {
+                            option.selected = true;
+                        }
+                        
+                        selector.appendChild(option);
+                        console.log(`➕ Agregada unidad: ${unidad.codigo}`);
+                    });
+                    
+                    console.log(`✅ Total unidades cargadas: ${response.data.unidades.length}`);
+                } else {
+                    console.error(`❌ No se encontró selector para índice ${index}`);
+                }
+            } else {
+                console.warn(`⚠️ Respuesta inválida o sin unidades para producto ${productoId}`);
+            }
+        },
+        error: function(xhr) {
+            console.error(`❌ Error al cargar unidades para producto ${productoId}:`, xhr);
+            console.error('Status:', xhr.status, 'Response:', xhr.responseText);
+        }
+    });
+}
+
+// Función NUEVA para cambiar unidad de medida - SIN CACHÉ
+window.cambiarUnidadNueva = function(index, nuevaUnidad) {
+    console.log('🚀🚀🚀 FUNCIÓN NUEVA SIN CACHÉ - FUNCIONANDO 🚀🚀🚀');
+    try {
+        console.log(`🔄 cambiarUnidad llamada - Índice: ${index}, Nueva unidad: ${nuevaUnidad}`);
+        
+        if (!productos[index]) {
+            console.error('❌ Producto no encontrado en índice:', index);
+            return;
+        }
+        
+        const producto = productos[index];
+        const unidadOriginal = producto.unidad_medida || 'unidad';
+        
+        console.log(`📦 Producto: ${producto.nombre}`);
+        console.log(`🔄 Cambio: ${unidadOriginal} → ${nuevaUnidad}`);
+        console.log(`📊 Cantidad actual: ${producto.cantidad}`);
+        console.log(`🔍 Verificando unidades - Original: "${unidadOriginal}", Nueva: "${nuevaUnidad}"`);
+        console.log(`🔍 Son iguales?: ${unidadOriginal === nuevaUnidad}`);
+        
+        // Si es la misma unidad, no hacer nada
+        if (unidadOriginal === nuevaUnidad) {
+            console.log('⚠️ Misma unidad, no se hace conversión');
+            return;
+        }
+        
+        console.log('✅ Unidades diferentes, continuando con conversión...');
+        
+        // Mostrar indicador de carga
+        const selector = document.querySelector(`select[data-index="${index}"]`);
+        console.log('🎯 Selector encontrado:', selector);
+        if (selector) {
+            selector.disabled = true;
+            selector.style.opacity = '0.5';
+            console.log('🔒 Selector deshabilitado');
+        }
+        
+        // Siempre usar la API de conversiones
+        console.log('🚀 Iniciando conversión via API...');
+        console.log('📋 Llamando realizarConversionDirecta con:', {
+            producto: producto.nombre,
+            unidadOrigen: unidadOriginal,
+            unidadDestino: nuevaUnidad,
+            index: index
+        });
+        
+        realizarConversionDirecta(producto, unidadOriginal, nuevaUnidad, index);
+        console.log('✅ Llamada a realizarConversionDirecta completada');
+        
+    } catch (error) {
+        console.error('❌ ERROR en cambiarUnidad:', error);
+        console.error('Stack trace:', error.stack);
+        Swal.fire('Error', 'Error interno en cambiarUnidad: ' + error.message, 'error');
+    }
+};
+
+// Función para realizar conversión directa
+function realizarConversionDirecta(producto, unidadOrigen, unidadDestino, index) {
+    try {
+        console.log('🌐 Enviando petición AJAX a API...');
+        console.log('📡 URL:', '/api/conversiones/convertir-unidad');
+        console.log('📦 Datos:', {
+            producto_id: producto.id,
+            unidad_origen: unidadOrigen,
+            unidad_destino: unidadDestino,
+            cantidad: producto.cantidad,
+            precio: producto.precio_venta
+        });
+    
+    $.ajax({
+        url: '/api/conversiones/convertir-unidad',
+        method: 'POST',
+        data: {
+            producto_id: producto.id,
+            unidad_origen: unidadOrigen,
+            unidad_destino: unidadDestino,
+            cantidad: producto.cantidad,
+            precio: producto.precio_venta
+        },
+        success: function(response) {
+            console.log('✅ Respuesta exitosa de la API:', response);
+            
+            if (response.success) {
+                console.log('🎯 Conversión exitosa, actualizando producto...');
+                
+                // Guardar cantidad y precio originales para mostrar en notificación
+                const cantidadOriginal = producto.cantidad;
+                const unidadOriginal = unidadOrigen;
+                const precioOriginal = producto.precio_venta;
+                
+                // Actualizar datos del producto
+                producto.cantidad = parseFloat(response.data.cantidad_convertida.toFixed(3));
+                producto.precio_venta = parseFloat(response.data.precio_convertido.toFixed(2));
+                producto.unidad_medida = response.data.unidad_destino;
+                
+                // Actualizar la tabla
+                actualizarTablaProductos();
+                calcularTotales();
+                
+                // Mostrar notificación con detalles de la conversión
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Conversión Automática Realizada',
+                    html: `
+                        <div class="text-start">
+                            <strong>Conversión:</strong><br>
+                            ${cantidadOriginal} ${unidadOriginal.toUpperCase()} → <strong>${response.data.cantidad_convertida} ${response.data.unidad_destino.toUpperCase()}</strong><br><br>
+                            <strong>Precio ajustado:</strong><br>
+                            $${precioOriginal.toLocaleString()} por ${unidadOriginal} → <strong>$${response.data.precio_convertido.toLocaleString()} por ${response.data.unidad_destino}</strong><br><br>
+                            <small class="text-muted">Factor: ${response.data.factor_conversion}</small><br>
+                            ${response.data.descripcion ? '<small class="text-muted">' + response.data.descripcion + '</small>' : ''}
+                        </div>
+                    `,
+                    timer: 3500,
+                    showConfirmButton: false
+                });
+            } else {
+                console.error('Error en conversión:', response.message);
+                Swal.fire('Error', 'No se pudo realizar la conversión', 'error');
+                
+                // Revertir selector
+                const selector = document.querySelector(`select[data-index="${index}"]`);
+                if (selector) {
+                    selector.value = unidadOrigen;
+                }
+            }
+        },
+        error: function(xhr) {
+            console.error('❌ Error en conversión API:', xhr);
+            console.error('📊 Status:', xhr.status);
+            console.error('📝 Response:', xhr.responseText);
+            console.error('📋 Ready State:', xhr.readyState);
+            
+            Swal.fire('Error', 'Error al conectar con el servidor: ' + xhr.status, 'error');
+            
+            // Revertir selector
+            const selector = document.querySelector(`select[data-index="${index}"]`);
+            if (selector) {
+                selector.value = unidadOrigen;
+            }
+        },
+        complete: function() {
+            // Quitar indicador de carga
+            const selector = document.querySelector(`select[data-index="${index}"]`);
+            if (selector) {
+                selector.disabled = false;
+                selector.style.opacity = '1';
+            }
+        }
+    });
+    
+    } catch (error) {
+        console.error('❌ ERROR en realizarConversionDirecta:', error);
+        console.error('Stack trace:', error.stack);
+        
+        // Quitar indicador de carga
+        const selector = document.querySelector(`select[data-index="${index}"]`);
+        if (selector) {
+            selector.disabled = false;
+            selector.style.opacity = '1';
+            selector.value = unidadOrigen; // Revertir
+        }
+        
+        Swal.fire('Error', 'Error interno en conversión: ' + error.message, 'error');
+    }
+}
+
 });
 </script>
 @endpush

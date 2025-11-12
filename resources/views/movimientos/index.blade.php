@@ -3,7 +3,7 @@
 @section('title', 'Movimientos Internos')
 
 @section('styles')
-<link href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" rel="stylesheet">
+<link href="{{ asset('assets/css/daterangepicker.css') }}" rel="stylesheet">
 <style>
     .badge-entrada { background-color: #28a745; color: white; }
     .badge-salida { background-color: #dc3545; color: white; }
@@ -123,8 +123,8 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script src="{{ asset('assets/js/moment.min.js') }}"></script>
+<script src="{{ asset('assets/js/daterangepicker.min.js') }}"></script>
 <script>
 $(document).ready(function() {
     $('#fecha_rango').daterangepicker({

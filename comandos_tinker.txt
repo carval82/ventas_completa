@@ -1,0 +1,46 @@
+// Comandos para ejecutar en php artisan tinker
+
+// 1. Verificar empresa
+$empresa = \App\Models\Empresa::first();
+echo "Empresa: " . $empresa->nombre_comercial . "\n";
+echo "Email Alegra: " . $empresa->alegra_email . "\n";
+echo "Múltiples impuestos (antes): " . ($empresa->alegra_multiples_impuestos ? 'SÍ' : 'NO') . "\n";
+
+// 2. Configurar empresa para NO usar múltiples impuestos
+$empresa->alegra_multiples_impuestos = false;
+$empresa->save();
+echo "✅ Empresa configurada para NO usar múltiples impuestos\n";
+
+// 3. Verificar producto
+$producto = \App\Models\Producto::find(43);
+echo "Producto: " . $producto->nombre . "\n";
+echo "Código: " . $producto->codigo . "\n";
+echo "IVA: " . $producto->iva . "%\n";
+echo "ID Alegra actual: " . ($producto->id_alegra ?? 'NO SINCRONIZADO') . "\n";
+
+// 4. Limpiar sincronización anterior para forzar nueva creación
+$producto->id_alegra = null;
+$producto->save();
+echo "✅ ID Alegra limpiado\n";
+
+// 5. Intentar sincronizar con la corrección
+echo "🚀 Sincronizando con Alegra...\n";
+$resultado = $producto->syncToAlegra();
+
+// 6. Mostrar resultado
+if ($resultado['success']) {
+    echo "✅ ÉXITO: Producto sincronizado correctamente\n";
+    echo "ID Alegra: " . $resultado['id_alegra'] . "\n";
+    echo "Mensaje: " . $resultado['message'] . "\n";
+} else {
+    echo "❌ ERROR: " . $resultado['message'] . "\n";
+    if (isset($resultado['error'])) {
+        echo "Detalle: " . $resultado['error'] . "\n";
+    }
+}
+
+// 7. Verificar que se guardó
+$producto->refresh();
+echo "ID Alegra final: " . ($producto->id_alegra ?? 'NO GUARDADO') . "\n";
+
+exit

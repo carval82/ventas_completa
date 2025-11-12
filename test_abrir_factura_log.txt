@@ -1,0 +1,62 @@
+=== Test Abrir Factura 2025-06-05 16:07:30 ===
+Iniciando prueba para factura con ID: 4122
+
+Verificando estado actual de la factura...
+
+Estado inicial de la factura:
+Success: SÍ
+Mensaje: N/A
+Datos de la factura:
+  ID: 4122
+  Número: FEV1730
+  Estado: draft
+  Fecha: 2025-06-05
+  Total: 833
+
+
+Probando abrir la factura con formato completo (paymentForm y paymentMethod)...
+
+Resultado con formato completo:
+Success: NO
+Mensaje: N/A
+
+
+Verificando estado actual de la factura después del intento...
+
+Estado actual de la factura:
+Success: SÍ
+Mensaje: N/A
+Datos de la factura:
+  ID: 4122
+  Número: FEV1730
+  Estado: draft
+  Fecha: 2025-06-05
+  Total: 833
+
+
+Estado después de intentar con formato completo:
+Success: SÍ
+Mensaje: N/A
+Datos de la factura:
+  ID: 4122
+  Número: FEV1730
+  Estado: draft
+  Fecha: 2025-06-05
+  Total: 833
+
+
+Resultado con formato vacío:
+Success: NO
+Mensaje: N/A
+
+
+Estado después de intentar con formato vacío:
+Success: SÍ
+Mensaje: N/A
+Datos de la factura:
+  ID: 4122
+  Número: FEV1730
+  Estado: draft
+  Fecha: 2025-06-05
+  Total: 833
+

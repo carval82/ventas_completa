@@ -20,7 +20,7 @@ class ClienteController extends Controller
            });
        }
 
-       $clientes = $query->latest()->paginate(10);
+       $clientes = $query->latest()->paginate(10)->appends($request->query());
        return view('clientes.index', compact('clientes'));
    }
 
@@ -37,15 +37,38 @@ class ClienteController extends Controller
            'cedula' => 'required|unique:clientes',
            'telefono' => 'nullable',
            'email' => 'nullable|email|unique:clientes',
-           'direccion' => 'nullable'
+           'direccion' => 'nullable',
+           'ciudad' => 'nullable',
+           'departamento' => 'nullable',
+           'tipo_documento' => 'nullable',
+           'tipo_persona' => 'nullable|in:PERSON_ENTITY,LEGAL_ENTITY',
+           'regimen' => 'nullable|in:SIMPLIFIED_REGIME,COMMON_REGIME,SPECIAL_REGIME,NATIONAL_CONSUMPTION_TAX'
        ]);
 
        try {
-           Cliente::create($request->all());
+           $cliente = Cliente::create($request->all());
+           
+           // Intentar sincronizar con Alegra si la facturación electrónica está habilitada
+           $empresa = \App\Models\Empresa::first();
+           if ($empresa && $empresa->factura_electronica_habilitada) {
+               $resultado = $cliente->syncToAlegra();
+               
+               if (!$resultado['success']) {
+                   \Log::warning('No se pudo sincronizar el cliente con Alegra', [
+                       'cliente_id' => $cliente->id,
+                       'error' => $resultado['error'] ?? 'Error desconocido'
+                   ]);
+               }
+           }
+           
            return redirect()->route('clientes.index')
                           ->with('success', 'Cliente registrado exitosamente');
        } catch (\Exception $e) {
-           return back()->with('error', 'Error al registrar el cliente')->withInput();
+           \Log::error('Error al registrar cliente', [
+               'error' => $e->getMessage(),
+               'trace' => $e->getTraceAsString()
+           ]);
+           return back()->with('error', 'Error al registrar el cliente: ' . $e->getMessage())->withInput();
        }
    }
 
@@ -69,15 +92,38 @@ class ClienteController extends Controller
            'telefono' => 'nullable',
            'email' => 'nullable|email|unique:clientes,email,' . $cliente->id,
            'direccion' => 'nullable',
+           'ciudad' => 'nullable',
+           'departamento' => 'nullable',
+           'tipo_documento' => 'nullable',
+           'tipo_persona' => 'nullable|in:PERSON_ENTITY,LEGAL_ENTITY',
+           'regimen' => 'nullable|in:SIMPLIFIED_REGIME,COMMON_REGIME,SPECIAL_REGIME,NATIONAL_CONSUMPTION_TAX',
            'estado' => 'required|boolean'
        ]);
 
        try {
            $cliente->update($request->all());
+           
+           // Intentar sincronizar con Alegra si la facturación electrónica está habilitada
+           $empresa = \App\Models\Empresa::first();
+           if ($empresa && $empresa->factura_electronica_habilitada) {
+               $resultado = $cliente->syncToAlegra();
+               
+               if (!$resultado['success']) {
+                   \Log::warning('No se pudo sincronizar el cliente con Alegra', [
+                       'cliente_id' => $cliente->id,
+                       'error' => $resultado['error'] ?? 'Error desconocido'
+                   ]);
+               }
+           }
+           
            return redirect()->route('clientes.index')
                           ->with('success', 'Cliente actualizado exitosamente');
        } catch (\Exception $e) {
-           return back()->with('error', 'Error al actualizar el cliente')->withInput();
+           \Log::error('Error al actualizar cliente', [
+               'error' => $e->getMessage(),
+               'trace' => $e->getTraceAsString()
+           ]);
+           return back()->with('error', 'Error al actualizar el cliente: ' . $e->getMessage())->withInput();
        }
    }
 

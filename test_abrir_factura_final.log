@@ -1,0 +1,458 @@
+=== Test Abrir Factura Final 2025-06-05 16:25:24 ===
+
+Iniciando prueba para factura con ID: 4122
+Consultando estado de factura 4122...
+Estado actual: draft
+Número: FEV1730
+Respuesta completa: Array
+(
+    [id] => 4122
+    [date] => 2025-06-05
+    [dueDate] => 2025-06-05
+    [datetime] => 2025-06-05 16:22:50
+    [observations] => 
+    [anotation] => 
+    [termsConditions] => Esta factura se asimila en todos sus efectos a una letra de cambio de conformidad con el Art. 774 del código de comercio. Autorizo que en caso de incumplimiento de esta obligación sea reportado a las centrales de riesgo, se cobraran intereses por mora.
+    [status] => draft
+    [client] => Array
+        (
+            [id] => 291
+            [name] => Cliente Prueba
+            [identification] => 1234567890
+            [phonePrimary] => 3001234567
+            [phoneSecondary] => 
+            [fax] => 
+            [mobile] => 
+            [email] => cliente.prueba@example.com
+            [regime] => SIMPLIFIED_REGIME
+            [identificationType] => CC
+            [address] => Array
+                (
+                    [address] => Calle de prueba
+                    [department] => Bogotá
+                    [city] => Bogotá D.C.
+                )
+
+            [kindOfPerson] => PERSON_ENTITY
+            [identificationObject] => Array
+                (
+                    [type] => CC
+                    [number] => 1234567890
+                )
+
+        )
+
+    [numberTemplate] => Array
+        (
+            [id] => 19
+            [prefix] => FEV
+            [number] => 1730
+            [text] => Autorización de numeración de facturación N° 18764083087981 de 2024-11-08 Modalidad Factura Electrónica Desde N° FEV501 hasta FEV2000 con vigencia hasta 2026-11-08
+            [documentType] => invoice
+            [fullNumber] => FEV1730
+            [formattedNumber] => 1730
+            [isElectronic] => 1
+        )
+
+    [subtotal] => 700
+    [discount] => 0
+    [tax] => 133
+    [total] => 833
+    [totalPaid] => 0
+    [balance] => 833
+    [decimalPrecision] => 0
+    [warehouse] => Array
+        (
+            [id] => 1
+            [name] => Principal
+        )
+
+    [term] => De contado
+    [type] => NATIONAL
+    [operationType] => STANDARD
+    [paymentForm] => CASH
+    [seller] => 
+    [priceList] => Array
+        (
+            [id] => 1
+            [name] => General
+        )
+
+    [items] => Array
+        (
+            [0] => Array
+                (
+                    [name] => goletas
+                    [description] => 
+                    [price] => 700
+                    [discount] => 0
+                    [reference] => 
+                    [quantity] => 1
+                    [id] => 1722
+                    [productKey] => 
+                    [unit] => unit
+                    [tax] => Array
+                        (
+                            [0] => Array
+                                (
+                                    [id] => 1
+                                    [name] => IVA
+                                    [percentage] => 19.00
+                                    [description] => 
+                                    [status] => active
+                                    [deductible] => yes
+                                    [type] => IVA
+                                    [categoryFavorable] => Array
+                                        (
+                                            [id] => 5029
+                                            [idParent] => 5028
+                                            [name] => Impuesto a las ventas a favor
+                                            [text] => Impuesto a las ventas a favor
+                                            [code] => 
+                                            [description] => 
+                                            [type] => asset
+                                            [readOnly] => 
+                                            [nature] => debit
+                                            [blocked] => no
+                                            [status] => active
+                                            [categoryRule] => Array
+                                                (
+                                                    [id] => 44
+                                                    [name] => IVA descontable
+                                                    [key] => IVA_IN_FAVOR_COL
+                                                )
+
+                                            [use] => movement
+                                            [showThirdPartyBalance] => 1
+                                        )
+
+                                    [categoryToBePaid] => Array
+                                        (
+                                            [id] => 5098
+                                            [idParent] => 5097
+                                            [name] => Impuesto a las ventas por pagar
+                                            [text] => Impuesto a las ventas por pagar
+                                            [code] => 
+                                            [description] => 
+                                            [type] => liability
+                                            [readOnly] => 
+                                            [nature] => credit
+                                            [blocked] => no
+                                            [status] => active
+                                            [categoryRule] => Array
+                                                (
+                                                    [id] => 47
+                                                    [name] => IVA generado
+                                                    [key] => IVA_TO_PAY_COL
+                                                )
+
+                                            [use] => movement
+                                            [showThirdPartyBalance] => 1
+                                        )
+
+                                    [categorySalesReturns] => Array
+                                        (
+                                            [id] => 5098
+                                            [idParent] => 5097
+                                            [name] => Impuesto a las ventas por pagar
+                                            [text] => Impuesto a las ventas por pagar
+                                            [code] => 
+                                            [description] => 
+                                            [type] => liability
+                                            [readOnly] => 
+                                            [nature] => credit
+                                            [blocked] => no
+                                            [status] => active
+                                            [categoryRule] => Array
+                                                (
+                                                    [id] => 47
+                                                    [name] => IVA generado
+                                                    [key] => IVA_TO_PAY_COL
+                                                )
+
+                                            [use] => movement
+                                            [showThirdPartyBalance] => 1
+                                        )
+
+                                    [categoryPurchaseReturns] => Array
+                                        (
+                                            [id] => 5029
+                                            [idParent] => 5028
+                                            [name] => Impuesto a las ventas a favor
+                                            [text] => Impuesto a las ventas a favor
+                                            [code] => 
+                                            [description] => 
+                                            [type] => asset
+                                            [readOnly] => 
+                                            [nature] => debit
+                                            [blocked] => no
+                                            [status] => active
+                                            [categoryRule] => Array
+                                                (
+                                                    [id] => 44
+                                                    [name] => IVA descontable
+                                                    [key] => IVA_IN_FAVOR_COL
+                                                )
+
+                                            [use] => movement
+                                            [showThirdPartyBalance] => 1
+                                        )
+
+                                    [rate] => 
+                                    [amount] => 133
+                                )
+
+                        )
+
+                    [total] => 833
+                )
+
+        )
+
+    [costCenter] => 
+    [printingTemplate] => Array
+        (
+            [id] => 1
+            [name] => Clásico
+            [pageSize] => letter
+            [supportedPdfEngine] => 
+        )
+
+)
+
+
+=== Intentando abrir factura con formato 'completo' ===
+Payload: {"paymentForm":"CASH","paymentMethod":"CASH"}
+HTTP Code: 200
+Respuesta: {"id":"4122","date":"2025-06-05","dueDate":"2025-06-05","datetime":"2025-06-05T16:25:23","observations":null,"anotation":null,"termsConditions":"Esta factura se asimila en todos sus efectos a una letra de cambio de conformidad con el Art. 774 del c\u00f3digo de comercio. Autorizo que en caso de incumplimiento de esta obligaci\u00f3n sea reportado a las centrales de riesgo, se cobraran intereses por mora.","status":"draft","client":{"id":"291","name":"Cliente Prueba","identification":"1234567890","phonePrimary":"3001234567","phoneSecondary":null,"fax":null,"mobile":null,"email":"cliente.prueba@example.com","regime":"SIMPLIFIED_REGIME","identificationType":"CC","address":{"address":"Calle de prueba","department":"Bogot\u00e1","city":"Bogot\u00e1 D.C."},"kindOfPerson":"PERSON_ENTITY","identificationObject":{"type":"CC","number":"1234567890"}},"numberTemplate":{"id":"19","prefix":"FEV","number":"1730","text":"Autorizaci\u00f3n de numeraci\u00f3n de facturaci\u00f3n N\u00b0 18764083087981 de 2024-11-08 Modalidad Factura Electr\u00f3nica Desde N\u00b0 FEV501 hasta FEV2000 con vigencia hasta 2026-11-08","documentType":"invoice","fullNumber":"FEV1730","formattedNumber":"1730","isElectronic":true},"subtotal":700,"discount":0,"tax":133,"total":833,"totalPaid":0,"balance":833,"decimalPrecision":"0","warehouse":{"id":"1","name":"Principal"},"term":"De contado","type":"NATIONAL","operationType":"STANDARD","paymentForm":"CASH","paymentMethod":"CASH","seller":null,"priceList":{"id":"1","name":"General"},"items":[{"name":"goletas","description":null,"price":700,"discount":0,"reference":null,"quantity":1,"id":"1722","productKey":null,"unit":"unit","tax":[{"id":"1","name":"IVA","percentage":"19.00","description":"","status":"active","deductible":"yes","type":"IVA","categoryFavorable":{"id":"5029","idParent":"5028","name":"Impuesto a las ventas a favor","text":"Impuesto a las ventas a favor","code":null,"description":"","type":"asset","readOnly":false,"nature":"debit","blocked":"no","status":"active","categoryRule":{"id":"44","name":"IVA descontable","key":"IVA_IN_FAVOR_COL"},"use":"movement","showThirdPartyBalance":true},"categoryToBePaid":{"id":"5098","idParent":"5097","name":"Impuesto a las ventas por pagar","text":"Impuesto a las ventas por pagar","code":null,"description":"","type":"liability","readOnly":false,"nature":"credit","blocked":"no","status":"active","categoryRule":{"id":"47","name":"IVA generado","key":"IVA_TO_PAY_COL"},"use":"movement","showThirdPartyBalance":true},"categorySalesReturns":{"id":"5098","idParent":"5097","name":"Impuesto a las ventas por pagar","text":"Impuesto a las ventas por pagar","code":null,"description":"","type":"liability","readOnly":false,"nature":"credit","blocked":"no","status":"active","categoryRule":{"id":"47","name":"IVA generado","key":"IVA_TO_PAY_COL"},"use":"movement","showThirdPartyBalance":true},"categoryPurchaseReturns":{"id":"5029","idParent":"5028","name":"Impuesto a las ventas a favor","text":"Impuesto a las ventas a favor","code":null,"description":"","type":"asset","readOnly":false,"nature":"debit","blocked":"no","status":"active","categoryRule":{"id":"44","name":"IVA descontable","key":"IVA_IN_FAVOR_COL"},"use":"movement","showThirdPartyBalance":true},"rate":null,"amount":133}],"total":833}],"costCenter":null,"printingTemplate":{"id":"1","name":"Cl\u00e1sico","pageSize":"letter","supportedPdfEngine":null}}
+Respuesta completa: {"id":"4122","date":"2025-06-05","dueDate":"2025-06-05","datetime":"2025-06-05T16:25:23","observations":null,"anotation":null,"termsConditions":"Esta factura se asimila en todos sus efectos a una letra de cambio de conformidad con el Art. 774 del c\u00f3digo de comercio. Autorizo que en caso de incumplimiento de esta obligaci\u00f3n sea reportado a las centrales de riesgo, se cobraran intereses por mora.","status":"draft","client":{"id":"291","name":"Cliente Prueba","identification":"1234567890","phonePrimary":"3001234567","phoneSecondary":null,"fax":null,"mobile":null,"email":"cliente.prueba@example.com","regime":"SIMPLIFIED_REGIME","identificationType":"CC","address":{"address":"Calle de prueba","department":"Bogot\u00e1","city":"Bogot\u00e1 D.C."},"kindOfPerson":"PERSON_ENTITY","identificationObject":{"type":"CC","number":"1234567890"}},"numberTemplate":{"id":"19","prefix":"FEV","number":"1730","text":"Autorizaci\u00f3n de numeraci\u00f3n de facturaci\u00f3n N\u00b0 18764083087981 de 2024-11-08 Modalidad Factura Electr\u00f3nica Desde N\u00b0 FEV501 hasta FEV2000 con vigencia hasta 2026-11-08","documentType":"invoice","fullNumber":"FEV1730","formattedNumber":"1730","isElectronic":true},"subtotal":700,"discount":0,"tax":133,"total":833,"totalPaid":0,"balance":833,"decimalPrecision":"0","warehouse":{"id":"1","name":"Principal"},"term":"De contado","type":"NATIONAL","operationType":"STANDARD","paymentForm":"CASH","paymentMethod":"CASH","seller":null,"priceList":{"id":"1","name":"General"},"items":[{"name":"goletas","description":null,"price":700,"discount":0,"reference":null,"quantity":1,"id":"1722","productKey":null,"unit":"unit","tax":[{"id":"1","name":"IVA","percentage":"19.00","description":"","status":"active","deductible":"yes","type":"IVA","categoryFavorable":{"id":"5029","idParent":"5028","name":"Impuesto a las ventas a favor","text":"Impuesto a las ventas a favor","code":null,"description":"","type":"asset","readOnly":false,"nature":"debit","blocked":"no","status":"active","categoryRule":{"id":"44","name":"IVA descontable","key":"IVA_IN_FAVOR_COL"},"use":"movement","showThirdPartyBalance":true},"categoryToBePaid":{"id":"5098","idParent":"5097","name":"Impuesto a las ventas por pagar","text":"Impuesto a las ventas por pagar","code":null,"description":"","type":"liability","readOnly":false,"nature":"credit","blocked":"no","status":"active","categoryRule":{"id":"47","name":"IVA generado","key":"IVA_TO_PAY_COL"},"use":"movement","showThirdPartyBalance":true},"categorySalesReturns":{"id":"5098","idParent":"5097","name":"Impuesto a las ventas por pagar","text":"Impuesto a las ventas por pagar","code":null,"description":"","type":"liability","readOnly":false,"nature":"credit","blocked":"no","status":"active","categoryRule":{"id":"47","name":"IVA generado","key":"IVA_TO_PAY_COL"},"use":"movement","showThirdPartyBalance":true},"categoryPurchaseReturns":{"id":"5029","idParent":"5028","name":"Impuesto a las ventas a favor","text":"Impuesto a las ventas a favor","code":null,"description":"","type":"asset","readOnly":false,"nature":"debit","blocked":"no","status":"active","categoryRule":{"id":"44","name":"IVA descontable","key":"IVA_IN_FAVOR_COL"},"use":"movement","showThirdPartyBalance":true},"rate":null,"amount":133}],"total":833}],"costCenter":null,"printingTemplate":{"id":"1","name":"Cl\u00e1sico","pageSize":"letter","supportedPdfEngine":null}}
+Esperando 3 segundos para que el cambio se aplique...
+Consultando estado de factura 4122...
+Estado actual: draft
+Número: FEV1730
+Respuesta completa: Array
+(
+    [id] => 4122
+    [date] => 2025-06-05
+    [dueDate] => 2025-06-05
+    [datetime] => 2025-06-05 16:25:23
+    [observations] => 
+    [anotation] => 
+    [termsConditions] => Esta factura se asimila en todos sus efectos a una letra de cambio de conformidad con el Art. 774 del código de comercio. Autorizo que en caso de incumplimiento de esta obligación sea reportado a las centrales de riesgo, se cobraran intereses por mora.
+    [status] => draft
+    [client] => Array
+        (
+            [id] => 291
+            [name] => Cliente Prueba
+            [identification] => 1234567890
+            [phonePrimary] => 3001234567
+            [phoneSecondary] => 
+            [fax] => 
+            [mobile] => 
+            [email] => cliente.prueba@example.com
+            [regime] => SIMPLIFIED_REGIME
+            [identificationType] => CC
+            [address] => Array
+                (
+                    [address] => Calle de prueba
+                    [department] => Bogotá
+                    [city] => Bogotá D.C.
+                )
+
+            [kindOfPerson] => PERSON_ENTITY
+            [identificationObject] => Array
+                (
+                    [type] => CC
+                    [number] => 1234567890
+                )
+
+        )
+
+    [numberTemplate] => Array
+        (
+            [id] => 19
+            [prefix] => FEV
+            [number] => 1730
+            [text] => Autorización de numeración de facturación N° 18764083087981 de 2024-11-08 Modalidad Factura Electrónica Desde N° FEV501 hasta FEV2000 con vigencia hasta 2026-11-08
+            [documentType] => invoice
+            [fullNumber] => FEV1730
+            [formattedNumber] => 1730
+            [isElectronic] => 1
+        )
+
+    [subtotal] => 700
+    [discount] => 0
+    [tax] => 133
+    [total] => 833
+    [totalPaid] => 0
+    [balance] => 833
+    [decimalPrecision] => 0
+    [warehouse] => Array
+        (
+            [id] => 1
+            [name] => Principal
+        )
+
+    [term] => De contado
+    [type] => NATIONAL
+    [operationType] => STANDARD
+    [paymentForm] => CASH
+    [paymentMethod] => CASH
+    [seller] => 
+    [priceList] => Array
+        (
+            [id] => 1
+            [name] => General
+        )
+
+    [items] => Array
+        (
+            [0] => Array
+                (
+                    [name] => goletas
+                    [description] => 
+                    [price] => 700
+                    [discount] => 0
+                    [reference] => 
+                    [quantity] => 1
+                    [id] => 1722
+                    [productKey] => 
+                    [unit] => unit
+                    [tax] => Array
+                        (
+                            [0] => Array
+                                (
+                                    [id] => 1
+                                    [name] => IVA
+                                    [percentage] => 19.00
+                                    [description] => 
+                                    [status] => active
+                                    [deductible] => yes
+                                    [type] => IVA
+                                    [categoryFavorable] => Array
+                                        (
+                                            [id] => 5029
+                                            [idParent] => 5028
+                                            [name] => Impuesto a las ventas a favor
+                                            [text] => Impuesto a las ventas a favor
+                                            [code] => 
+                                            [description] => 
+                                            [type] => asset
+                                            [readOnly] => 
+                                            [nature] => debit
+                                            [blocked] => no
+                                            [status] => active
+                                            [categoryRule] => Array
+                                                (
+                                                    [id] => 44
+                                                    [name] => IVA descontable
+                                                    [key] => IVA_IN_FAVOR_COL
+                                                )
+
+                                            [use] => movement
+                                            [showThirdPartyBalance] => 1
+                                        )
+
+                                    [categoryToBePaid] => Array
+                                        (
+                                            [id] => 5098
+                                            [idParent] => 5097
+                                            [name] => Impuesto a las ventas por pagar
+                                            [text] => Impuesto a las ventas por pagar
+                                            [code] => 
+                                            [description] => 
+                                            [type] => liability
+                                            [readOnly] => 
+                                            [nature] => credit
+                                            [blocked] => no
+                                            [status] => active
+                                            [categoryRule] => Array
+                                                (
+                                                    [id] => 47
+                                                    [name] => IVA generado
+                                                    [key] => IVA_TO_PAY_COL
+                                                )
+
+                                            [use] => movement
+                                            [showThirdPartyBalance] => 1
+                                        )
+
+                                    [categorySalesReturns] => Array
+                                        (
+                                            [id] => 5098
+                                            [idParent] => 5097
+                                            [name] => Impuesto a las ventas por pagar
+                                            [text] => Impuesto a las ventas por pagar
+                                            [code] => 
+                                            [description] => 
+                                            [type] => liability
+                                            [readOnly] => 
+                                            [nature] => credit
+                                            [blocked] => no
+                                            [status] => active
+                                            [categoryRule] => Array
+                                                (
+                                                    [id] => 47
+                                                    [name] => IVA generado
+                                                    [key] => IVA_TO_PAY_COL
+                                                )
+
+                                            [use] => movement
+                                            [showThirdPartyBalance] => 1
+                                        )
+
+                                    [categoryPurchaseReturns] => Array
+                                        (
+                                            [id] => 5029
+                                            [idParent] => 5028
+                                            [name] => Impuesto a las ventas a favor
+                                            [text] => Impuesto a las ventas a favor
+                                            [code] => 
+                                            [description] => 
+                                            [type] => asset
+                                            [readOnly] => 
+                                            [nature] => debit
+                                            [blocked] => no
+                                            [status] => active
+                                            [categoryRule] => Array
+                                                (
+                                                    [id] => 44
+                                                    [name] => IVA descontable
+                                                    [key] => IVA_IN_FAVOR_COL
+                                                )
+
+                                            [use] => movement
+                                            [showThirdPartyBalance] => 1
+                                        )
+
+                                    [rate] => 
+                                    [amount] => 133
+                                )
+
+                        )
+
+                    [total] => 833
+                )
+
+        )
+
+    [costCenter] => 
+    [printingTemplate] => Array
+        (
+            [id] => 1
+            [name] => Clásico
+            [pageSize] => letter
+            [supportedPdfEngine] => 
+        )
+
+)
+
+
+❌ La factura no se abrió con formato 'completo'. Intentando siguiente formato...
+
+=== Intentando abrir factura con formato 'minimo' ===
+Payload: {"paymentForm":"CASH"}
+HTTP Code: 200
+Respuesta: {"id":"4122","date":"2025-06-05","dueDate":"2025-06-05","datetime":"2025-06-05T16:25:31","observations":null,"anotation":null,"termsConditions":"Esta factura se asimila en todos sus efectos a una letra de cambio de conformidad con el Art. 774 del c\u00f3digo de comercio. Autorizo que en caso de incumplimiento de esta obligaci\u00f3n sea reportado a las centrales de riesgo, se cobraran intereses por mora.","status":"draft","client":{"id":"291","name":"Cliente Prueba","identification":"1234567890","phonePrimary":"3001234567","phoneSecondary":null,"fax":null,"mobile":null,"email":"cliente.prueba@example.com","regime":"SIMPLIFIED_REGIME","identificationType":"CC","address":{"address":"Calle de prueba","department":"Bogot\u00e1","city":"Bogot\u00e1 D.C."},"kindOfPerson":"PERSON_ENTITY","identificationObject":{"type":"CC","number":"1234567890"}},"numberTemplate":{"id":"19","prefix":"FEV","number":"1730","text":"Autorizaci\u00f3n de numeraci\u00f3n de facturaci\u00f3n N\u00b0 18764083087981 de 2024-11-08 Modalidad Factura Electr\u00f3nica Desde N\u00b0 FEV501 hasta FEV2000 con vigencia hasta 2026-11-08","documentType":"invoice","fullNumber":"FEV1730","formattedNumber":"1730","isElectronic":true},"subtotal":700,"discount":0,"tax":133,"total":833,"totalPaid":0,"balance":833,"decimalPrecision":"0","warehouse":{"id":"1","name":"Principal"},"term":"De contado","type":"NATIONAL","operationType":"STANDARD","paymentForm":"CASH","seller":null,"priceList":{"id":"1","name":"General"},"items":[{"name":"goletas","description":null,"price":700,"discount":0,"reference":null,"quantity":1,"id":"1722","productKey":null,"unit":"unit","tax":[{"id":"1","name":"IVA","percentage":"19.00","description":"","status":"active","deductible":"yes","type":"IVA","categoryFavorable":{"id":"5029","idParent":"5028","name":"Impuesto a las ventas a favor","text":"Impuesto a las ventas a favor","code":null,"description":"","type":"asset","readOnly":false,"nature":"debit","blocked":"no","status":"active","categoryRule":{"id":"44","name":"IVA descontable","key":"IVA_IN_FAVOR_COL"},"use":"movement","showThirdPartyBalance":true},"categoryToBePaid":{"id":"5098","idParent":"5097","name":"Impuesto a las ventas por pagar","text":"Impuesto a las ventas por pagar","code":null,"description":"","type":"liability","readOnly":false,"nature":"credit","blocked":"no","status":"active","categoryRule":{"id":"47","name":"IVA generado","key":"IVA_TO_PAY_COL"},"use":"movement","showThirdPartyBalance":true},"categorySalesReturns":{"id":"5098","idParent":"5097","name":"Impuesto a las ventas por pagar","text":"Impuesto a las ventas por pagar","code":null,"description":"","type":"liability","readOnly":false,"nature":"credit","blocked":"no","status":"active","categoryRule":{"id":"47","name":"IVA generado","key":"IVA_TO_PAY_COL"},"use":"movement","showThirdPartyBalance":true},"categoryPurchaseReturns":{"id":"5029","idParent":"5028","name":"Impuesto a las ventas a favor","text":"Impuesto a las ventas a favor","code":null,"description":"","type":"asset","readOnly":false,"nature":"debit","blocked":"no","status":"active","categoryRule":{"id":"44","name":"IVA descontable","key":"IVA_IN_FAVOR_COL"},"use":"movement","showThirdPartyBalance":true},"rate":null,"amount":133}],"total":833}],"costCenter":null,"printingTemplate":{"id":"1","name":"Cl\u00e1sico","pageSize":"letter","supportedPdfEngine":null}}
+Respuesta completa: {"id":"4122","date":"2025-06-05","dueDate":"2025-06-05","datetime":"2025-06-05T16:25:31","observations":null,"anotation":null,"termsConditions":"Esta factura se asimila en todos sus efectos a una letra de cambio de conformidad con el Art. 774 del c\u00f3digo de comercio. Autorizo que en caso de incumplimiento de esta obligaci\u00f3n sea reportado a las centrales de riesgo, se cobraran intereses por mora.","status":"draft","client":{"id":"291","name":"Cliente Prueba","identification":"1234567890","phonePrimary":"3001234567","phoneSecondary":null,"fax":null,"mobile":null,"email":"cliente.prueba@example.com","regime":"SIMPLIFIED_REGIME","identificationType":"CC","address":{"address":"Calle de prueba","department":"Bogot\u00e1","city":"Bogot\u00e1 D.C."},"kindOfPerson":"PERSON_ENTITY","identificationObject":{"type":"CC","number":"1234567890"}},"numberTemplate":{"id":"19","prefix":"FEV","number":"1730","text":"Autorizaci\u00f3n de numeraci\u00f3n de facturaci\u00f3n N\u00b0 18764083087981 de 2024-11-08 Modalidad Factura Electr\u00f3nica Desde N\u00b0 FEV501 hasta FEV2000 con vigencia hasta 2026-11-08","documentType":"invoice","fullNumber":"FEV1730","formattedNumber":"1730","isElectronic":true},"subtotal":700,"discount":0,"tax":133,"total":833,"totalPaid":0,"balance":833,"decimalPrecision":"0","warehouse":{"id":"1","name":"Principal"},"term":"De contado","type":"NATIONAL","operationType":"STANDARD","paymentForm":"CASH","seller":null,"priceList":{"id":"1","name":"General"},"items":[{"name":"goletas","description":null,"price":700,"discount":0,"reference":null,"quantity":1,"id":"1722","productKey":null,"unit":"unit","tax":[{"id":"1","name":"IVA","percentage":"19.00","description":"","status":"active","deductible":"yes","type":"IVA","categoryFavorable":{"id":"5029","idParent":"5028","name":"Impuesto a las ventas a favor","text":"Impuesto a las ventas a favor","code":null,"description":"","type":"asset","readOnly":false,"nature":"debit","blocked":"no","status":"active","categoryRule":{"id":"44","name":"IVA descontable","key":"IVA_IN_FAVOR_COL"},"use":"movement","showThirdPartyBalance":true},"categoryToBePaid":{"id":"5098","idParent":"5097","name":"Impuesto a las ventas por pagar","text":"Impuesto a las ventas por pagar","code":null,"description":"","type":"liability","readOnly":false,"nature":"credit","blocked":"no","status":"active","categoryRule":{"id":"47","name":"IVA generado","key":"IVA_TO_PAY_COL"},"use":"movement","showThirdPartyBalance":true},"categorySalesReturns":{"id":"5098","idParent":"5097","name":"Impuesto a las ventas por pagar","text":"Impuesto a las ventas por pagar","code":null,"description":"","type":"liability","readOnly":false,"nature":"credit","blocked":"no","status":"active","categoryRule":{"id":"47","name":"IVA generado","key":"IVA_TO_PAY_COL"},"use":"movement","showThirdPartyBalance":true},"categoryPurchaseReturns":{"id":"5029","idParent":"5028","name":"Impuesto a las ventas a favor","text":"Impuesto a las ventas a favor","code":null,"description":"","type":"asset","readOnly":false,"nature":"debit","blocked":"no","status":"active","categoryRule":{"id":"44","name":"IVA descontable","key":"IVA_IN_FAVOR_COL"},"use":"movement","showThirdPartyBalance":true},"rate":null,"amount":133}],"total":833}],"costCenter":null,"printingTemplate":{"id":"1","name":"Cl\u00e1sico","pageSize":"letter","supportedPdfEngine":null}}
+Esperando 3 segundos para que el cambio se aplique...

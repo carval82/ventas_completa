@@ -37,6 +37,9 @@ class RouteServiceProvider extends ServiceProvider
 
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
+                
+            // Módulo de administración de cerdos eliminado
+            // El código ha sido migrado al proyecto pig_farm_magnament
         });
     }
 }

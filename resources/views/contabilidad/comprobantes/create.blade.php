@@ -21,7 +21,19 @@
 
                 <!-- Cabecera -->
                 <div class="row mb-4">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <label class="form-label">Prefijo</label>
+                        <input type="text" 
+                               class="form-control @error('prefijo') is-invalid @enderror" 
+                               name="prefijo" 
+                               value="{{ old('prefijo', $comprobante->prefijo ?? '') }}" 
+                               placeholder="Ej: COM">
+                        @error('prefijo')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="col-md-2">
                         <label class="form-label required">Número</label>
                         <input type="text" 
                                class="form-control @error('numero') is-invalid @enderror" 
@@ -202,54 +214,63 @@ function eliminarMovimiento(button) {
 function calcularTotales() {
     let totalDebito = 0;
     let totalCredito = 0;
-
+    
+    // Sumar débitos
     document.querySelectorAll('.debito').forEach(input => {
-        totalDebito += parseFloat(input.value || 0);
+        totalDebito += parseFloat(input.value) || 0;
     });
-
+    
+    // Sumar créditos
     document.querySelectorAll('.credito').forEach(input => {
-        totalCredito += parseFloat(input.value || 0);
+        totalCredito += parseFloat(input.value) || 0;
     });
-
+    
+    // Actualizar totales
     document.getElementById('totalDebito').textContent = totalDebito.toFixed(2);
     document.getElementById('totalCredito').textContent = totalCredito.toFixed(2);
-
+    
+    // Calcular diferencia
     const diferencia = Math.abs(totalDebito - totalCredito);
     document.getElementById('diferencia').textContent = diferencia.toFixed(2);
-    document.getElementById('diferenciaTr').style.display = diferencia > 0 ? '' : 'none';
+    
+    // Mostrar/ocultar fila de diferencia
+    const diferenciaTr = document.getElementById('diferenciaTr');
+    if (diferencia > 0) {
+        diferenciaTr.style.display = 'table-row';
+        document.getElementById('btnGuardar').disabled = true;
+    } else {
+        diferenciaTr.style.display = 'none';
+        document.getElementById('btnGuardar').disabled = false;
+    }
 }
 
-// Validar formulario antes de enviar
-document.getElementById('comprobanteForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    const totalDebito = parseFloat(document.getElementById('totalDebito').textContent);
-    const totalCredito = parseFloat(document.getElementById('totalCredito').textContent);
-
-    if (totalDebito !== totalCredito) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'El comprobante debe estar cuadrado (débito = crédito)'
-        });
-        return;
+// Inicializar Select2 para las cuentas
+$(document).ready(function() {
+    $('.cuenta-select').select2({
+        placeholder: 'Seleccione cuenta...',
+        width: '100%'
+    });
+    
+    // Agregar al menos un movimiento al cargar la página
+    if (document.querySelectorAll('#tablaMovimientos tbody tr').length === 0) {
+        agregarMovimiento();
     }
-
-    if (totalDebito === 0 && totalCredito === 0) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'El comprobante debe tener al menos un movimiento'
-        });
-        return;
-    }
-
-    this.submit();
-});
-
-// Agregar primer movimiento al cargar la página
-document.addEventListener('DOMContentLoaded', function() {
-    agregarMovimiento();
+    
+    // Validar formulario antes de enviar
+    $('#comprobanteForm').on('submit', function(e) {
+        const totalDebito = parseFloat(document.getElementById('totalDebito').textContent);
+        const totalCredito = parseFloat(document.getElementById('totalCredito').textContent);
+        
+        if (totalDebito !== totalCredito) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'El comprobante no está cuadrado. La diferencia es de ' + 
+                      Math.abs(totalDebito - totalCredito).toFixed(2)
+            });
+        }
+    });
 });
 </script>
 @endpush

@@ -6,6 +6,8 @@ use App\Models\Compra;
 use App\Models\Proveedor;
 use App\Models\Producto;
 use App\Models\Empresa;
+use App\Services\IvaValidationService;
+use App\Services\ContabilidadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -61,7 +63,9 @@ class CompraController extends Controller
             'proveedor_id' => 'required|exists:proveedores,id',
             'productos' => 'required|array',
             'productos.*.id' => 'required|exists:productos,id',
-            'productos.*.cantidad' => 'required|integer|min:1',
+            'productos.*.cantidad' => 'required|numeric|min:0.001',
+            'productos.*.unidad_medida' => 'nullable|string',
+            'productos.*.factor_conversion' => 'nullable|numeric|min:0.001',
             'subtotal' => 'required|numeric|min:0',
             'iva' => 'required|numeric|min:0',
             'total' => 'required|numeric|min:0'
@@ -80,16 +84,74 @@ class CompraController extends Controller
                 ]);
 
                 foreach ($request->productos as $item) {
-                    // Crear detalle de compra
+                    // Obtener el producto completo para acceder a su información de IVA
+                    $producto = Producto::find($item['id']);
+                    
+                    // Calcular cantidad real considerando unidades de conversión
+                    $cantidadCompra = $item['cantidad'];
+                    $unidadMedida = $item['unidad_medida'] ?? $producto->unidad_medida ?? 'UND';
+                    $factorConversion = $item['factor_conversion'] ?? 1;
+                    
+                    // Cantidad que se agregará al stock (en unidad base del producto)
+                    $cantidadStock = $cantidadCompra * $factorConversion;
+                    
+                    // Calcular subtotal
+                    $subtotal = $cantidadCompra * $item['precio'];
+                    
+                    // Usar el servicio de validación para obtener y validar el IVA
+                    $porcentaje_iva = IvaValidationService::obtenerPorcentajeIvaProducto($producto);
+                    $tiene_iva = $porcentaje_iva > 0;
+                    $valor_iva = IvaValidationService::calcularValorIva($subtotal, $porcentaje_iva);
+                    $total_con_iva = $subtotal + $valor_iva;
+                    
+                    // Registrar información para auditoría
+                    Log::info('Cálculo de IVA en detalle de compra', [
+                        'producto_id' => $producto->id,
+                        'producto_nombre' => $producto->nombre,
+                        'subtotal' => $subtotal,
+                        'tiene_iva' => $tiene_iva,
+                        'porcentaje_iva' => $porcentaje_iva,
+                        'valor_iva' => $valor_iva,
+                        'total_con_iva' => $total_con_iva
+                    ]);
+                    
+                    // Crear detalle de compra con información de IVA y unidades
                     $compra->detalles()->create([
                         'producto_id' => $item['id'],
-                        'cantidad' => $item['cantidad'],
+                        'cantidad' => $cantidadCompra,
+                        'unidad_medida' => $unidadMedida,
+                        'factor_conversion' => $factorConversion,
+                        'cantidad_stock' => $cantidadStock,
                         'precio_unitario' => $item['precio'],
-                        'subtotal' => $item['cantidad'] * $item['precio']
+                        'subtotal' => $subtotal,
+                        'tiene_iva' => $tiene_iva,
+                        'porcentaje_iva' => $porcentaje_iva,
+                        'valor_iva' => $valor_iva,
+                        'total_con_iva' => $total_con_iva
                     ]);
 
-                    // Incrementar stock
-                    Producto::find($item['id'])->increment('stock', $item['cantidad']);
+                    // Incrementar stock con la cantidad convertida
+                    $producto->increment('stock', $cantidadStock);
+                }
+                
+                // Generar comprobante contable usando el nuevo servicio
+                try {
+                    $contabilidadService = new ContabilidadService();
+                    $comprobante = $contabilidadService->generarComprobanteCompra($compra);
+                    
+                    Log::info('Comprobante contable generado para compra', [
+                        'compra_id' => $compra->id,
+                        'comprobante_id' => $comprobante->id,
+                        'prefijo' => $comprobante->prefijo,
+                        'numero' => $comprobante->numero
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Error al generar comprobante contable para compra', [
+                        'compra_id' => $compra->id,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    // No revertimos la transacción, la compra se registra igual
                 }
             });
 

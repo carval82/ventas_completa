@@ -1,0 +1,24 @@
+=== Abrir Factura 2025-06-05 16:37:00 ===
+
+Procesando factura ID: 4122
+Estado inicial: draft
+Número: FEV1730
+
+Método 1 (PUT /invoices/{id}):
+Payload: {"status":"open","paymentForm":"CASH","paymentMethod":"CASH"}
+HTTP 200
+Respuesta: {"id":"4122","date":"2025-06-05","dueDate":"2025-06-05","datetime":"2025-06-05T16:36:58","observatio...
+Estado después de método 1: draft
+
+Método 2 (PUT /invoices/{id}/open):
+Payload: {"paymentForm":"CASH","paymentMethod":"CASH"}
+HTTP 200
+Respuesta: {"id":"4122","date":"2025-06-05","dueDate":"2025-06-05","datetime":"2025-06-05T16:37:03","observatio...
+Estado después de método 2: draft
+
+❌ Ambos métodos fallaron. La factura sigue en estado: draft
+
+Método 3 (Actualizar solo campos de pago):
+Payload: {"paymentForm":"CASH","paymentMethod":"CASH"}
+HTTP 200
+Respuesta: {"id":"4122","date":"2025-06-05","dueDate":"2025-06-05","datetime":"2025-06-05T16:37:08","observatio...

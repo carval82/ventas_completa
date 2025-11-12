@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Manual de Conversiones</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3><i class="fas fa-exchange-alt"></i> Test Manual de Conversiones</h3>
+                <small>Simula el comportamiento esperado en las vistas de ventas</small>
+            </div>
+            <div class="card-body">
+                <!-- Simulación del producto -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>📦 Producto: Paca de Arroz Premium</h5>
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Cantidad</label>
+                                        <input type="number" class="form-control" id="cantidad" value="1" step="0.001">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Unidad</label>
+                                        <select class="form-select" id="unidad" onchange="simularConversion()">
+                                            <option value="paca">PACA</option>
+                                            <option value="lb">LB</option>
+                                            <option value="kg">KG</option>
+                                            <option value="unidad">UNIDAD</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Precio Unitario</label>
+                                        <input type="text" class="form-control" id="precio" value="$60,000" readonly>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Subtotal</label>
+                                        <input type="text" class="form-control" id="subtotal" value="$60,000" readonly>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Estado</label>
+                                        <div id="estado" class="alert alert-info mb-0">
+                                            <small>Listo para conversión</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h5>🔄 Equivalencias Configuradas</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>De</th>
+                                        <th>A</th>
+                                        <th>Factor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1 PACA</td>
+                                        <td>25 LB</td>
+                                        <td>25.0000</td>
+                                    </tr>
+                                    <tr>
+                                        <td>1 PACA</td>
+                                        <td>12.5 KG</td>
+                                        <td>12.5000</td>
+                                    </tr>
+                                    <tr>
+                                        <td>1 LB</td>
+                                        <td>0.04 PACA</td>
+                                        <td>0.0400</td>
+                                    </tr>
+                                    <tr>
+                                        <td>1 KG</td>
+                                        <td>2.2046 LB</td>
+                                        <td>2.2046</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botones de prueba rápida -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h5>🧪 Pruebas Rápidas</h5>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-outline-primary" onclick="pruebaRapida('paca', 1)">
+                                1 PACA
+                            </button>
+                            <button class="btn btn-outline-success" onclick="pruebaRapida('lb', 25)">
+                                25 LB
+                            </button>
+                            <button class="btn btn-outline-info" onclick="pruebaRapida('kg', 12.5)">
+                                12.5 KG
+                            </button>
+                            <button class="btn btn-outline-warning" onclick="pruebaRapida('lb', 50)">
+                                50 LB (2 pacas)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Log de conversiones -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h5>📝 Log de Conversiones</h5>
+                        <div id="log-conversiones" class="bg-dark text-light p-3" style="height: 200px; overflow-y: auto; font-family: monospace;">
+                            <div class="text-success">[INFO] Sistema de conversiones simulado listo</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Equivalencias del producto
+        const equivalencias = {
+            'paca': {
+                'lb': 25.0000,
+                'kg': 12.5000,
+                'unidad': 1.0000
+            },
+            'lb': {
+                'paca': 0.0400,
+                'kg': 0.4536,
+                'unidad': 0.0400
+            },
+            'kg': {
+                'paca': 0.0800,
+                'lb': 2.2046,
+                'unidad': 0.0800
+            },
+            'unidad': {
+                'paca': 1.0000,
+                'lb': 25.0000,
+                'kg': 12.5000
+            }
+        };
+        
+        // Precios base por unidad
+        const preciosBase = {
+            'paca': 60000,
+            'lb': 2400,      // 60000 / 25
+            'kg': 4800,      // 60000 / 12.5
+            'unidad': 60000
+        };
+        
+        let unidadAnterior = 'paca';
+        
+        function log(mensaje, tipo = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colores = {
+                'info': 'text-info',
+                'success': 'text-success',
+                'error': 'text-danger',
+                'warning': 'text-warning'
+            };
+            
+            const logDiv = document.getElementById('log-conversiones');
+            logDiv.innerHTML += `<div class="${colores[tipo]}">[${timestamp}] ${mensaje}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function simularConversion() {
+            const unidadActual = document.getElementById('unidad').value;
+            const cantidadActual = parseFloat(document.getElementById('cantidad').value);
+            
+            if (unidadActual === unidadAnterior) return;
+            
+            log(`Cambiando de ${unidadAnterior.toUpperCase()} a ${unidadActual.toUpperCase()}`);
+            
+            // Buscar factor de conversión
+            const factor = equivalencias[unidadAnterior] && equivalencias[unidadAnterior][unidadActual];
+            
+            if (factor) {
+                const nuevaCantidad = cantidadActual * factor;
+                const nuevoPrecio = preciosBase[unidadActual];
+                const nuevoSubtotal = nuevaCantidad * nuevoPrecio;
+                
+                // Actualizar campos
+                document.getElementById('cantidad').value = nuevaCantidad.toFixed(3);
+                document.getElementById('precio').value = '$' + nuevoPrecio.toLocaleString();
+                document.getElementById('subtotal').value = '$' + nuevoSubtotal.toLocaleString();
+                
+                // Mostrar estado
+                document.getElementById('estado').innerHTML = `
+                    <small class="text-success">
+                        <i class="fas fa-check-circle"></i> 
+                        Convertido: ${cantidadActual} ${unidadAnterior.toUpperCase()} → ${nuevaCantidad.toFixed(3)} ${unidadActual.toUpperCase()}
+                    </small>
+                `;
+                
+                log(`✅ Conversión exitosa: ${cantidadActual} ${unidadAnterior} → ${nuevaCantidad.toFixed(3)} ${unidadActual} (Factor: ${factor})`, 'success');
+                
+                // Mostrar notificación
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Conversión Automática Realizada',
+                    html: `
+                        <div class="text-start">
+                            <strong>Conversión:</strong><br>
+                            ${cantidadActual} ${unidadAnterior.toUpperCase()} → <strong>${nuevaCantidad.toFixed(3)} ${unidadActual.toUpperCase()}</strong><br><br>
+                            <strong>Precio ajustado:</strong><br>
+                            $${preciosBase[unidadAnterior].toLocaleString()} por ${unidadAnterior} → <strong>$${nuevoPrecio.toLocaleString()} por ${unidadActual}</strong><br><br>
+                            <small class="text-muted">Factor: ${factor}</small>
+                        </div>
+                    `,
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+                
+            } else {
+                log(`❌ No se encontró conversión de ${unidadAnterior} a ${unidadActual}`, 'error');
+                document.getElementById('estado').innerHTML = `
+                    <small class="text-danger">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        No se puede convertir de ${unidadAnterior.toUpperCase()} a ${unidadActual.toUpperCase()}
+                    </small>
+                `;
+            }
+            
+            unidadAnterior = unidadActual;
+        }
+        
+        function pruebaRapida(unidad, cantidad) {
+            document.getElementById('cantidad').value = cantidad;
+            document.getElementById('unidad').value = unidad;
+            
+            const precio = preciosBase[unidad];
+            const subtotal = cantidad * precio;
+            
+            document.getElementById('precio').value = '$' + precio.toLocaleString();
+            document.getElementById('subtotal').value = '$' + subtotal.toLocaleString();
+            
+            document.getElementById('estado').innerHTML = `
+                <small class="text-primary">
+                    <i class="fas fa-info-circle"></i> 
+                    Configurado: ${cantidad} ${unidad.toUpperCase()}
+                </small>
+            `;
+            
+            log(`🔧 Configuración manual: ${cantidad} ${unidad.toUpperCase()}`, 'warning');
+            unidadAnterior = unidad;
+        }
+        
+        // Configurar eventos
+        document.getElementById('cantidad').addEventListener('input', function() {
+            const cantidad = parseFloat(this.value) || 0;
+            const unidad = document.getElementById('unidad').value;
+            const precio = preciosBase[unidad];
+            const subtotal = cantidad * precio;
+            
+            document.getElementById('subtotal').value = '$' + subtotal.toLocaleString();
+        });
+    </script>
+</body>
+</html>

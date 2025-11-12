@@ -196,6 +196,47 @@
                 </div>
             </div>
         </div>
+        <!-- Reporte Fiscal de IVA -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-invoice-dollar"></i> Reporte Fiscal de IVA
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ route('reportes.fiscal-iva') }}" method="GET" target="_blank">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label required">Fecha Inicio</label>
+                                    <input type="date" 
+                                           name="fecha_inicio" 
+                                           class="form-control" 
+                                           value="{{ date('Y-m-01') }}" 
+                                           required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label required">Fecha Fin</label>
+                                    <input type="date" 
+                                           name="fecha_fin" 
+                                           class="form-control" 
+                                           value="{{ date('Y-m-d') }}" 
+                                           required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-file-pdf"></i> Generar Reporte
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 @endsection
