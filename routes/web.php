@@ -94,6 +94,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('ventas.dian.estado');
     Route::post('ventas/{id}/generar-fe', [VentaController::class, 'generarFacturaElectronicaPost'])
         ->name('ventas.generar-fe');
+    Route::post('/ventas/sincronizar-qrs', [VentaController::class, 'sincronizarQRs'])
+        ->name('ventas.sincronizar-qrs');
 
     // Cotizaciones
     Route::resource('cotizaciones', CotizacionController::class);

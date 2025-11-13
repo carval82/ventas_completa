@@ -35,6 +35,20 @@ class Venta extends Model
     ];
 
     /**
+     * Boot del modelo - Configurar eventos
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        
+        // Cuando se elimina una venta, eliminar sus detalles automáticamente
+        static::deleting(function ($venta) {
+            Log::info("Eliminando venta {$venta->id} y sus detalles");
+            $venta->detalles()->delete();
+        });
+    }
+
+    /**
      * Obtiene el número de factura a mostrar según el tipo
      * Para facturas electrónicas, prioriza el número de Alegra
      */

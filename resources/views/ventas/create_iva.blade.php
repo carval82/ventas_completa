@@ -1202,15 +1202,15 @@
                                 if (!printWindow) {
                                     console.error('Bloqueador de popups detectado');
                                     alert('Por favor, permita las ventanas emergentes para imprimir');
-                                    // Redirigir después de mostrar el mensaje
-                                    window.location.href = response.redirect_url || '/ventas/create';
-                                } else {
-                                    // No redirigir automáticamente, permitir que el usuario vea la impresión
-                                    // y luego decida manualmente volver a la página de ventas
                                 }
+                                
+                                // Refrescar el formulario para crear otra venta
+                                setTimeout(() => {
+                                    window.location.href = '/ventas/create-iva';
+                                }, 500);
                             } else {
-                                // Redirigir inmediatamente si no se imprime
-                                window.location.href = response.redirect_url || '/ventas/create';
+                                // Refrescar para crear nueva venta
+                                window.location.href = '/ventas/create-iva';
                             }
                         });
                     } catch (e) {
@@ -1535,15 +1535,15 @@ $('#btnConfirmarVenta').off('click').on('click', function() {
                         if (!printWindow) {
                             console.error('Bloqueador de popups detectado');
                             alert('Por favor, permita las ventanas emergentes para imprimir');
-                            // Redirigir después de mostrar el mensaje
-                            window.location.href = response.redirect_url || '/ventas/create';
-                        } else {
-                            // No redirigir automáticamente, permitir que el usuario vea la impresión
-                            // y luego decida manualmente volver a la página de ventas
                         }
+                        
+                        // Refrescar el formulario para crear otra venta
+                        setTimeout(() => {
+                            window.location.href = '/ventas/create-iva';
+                        }, 500);
                     } else {
-                        // Redirigir inmediatamente si no se imprime
-                        window.location.href = response.redirect_url || '/ventas/create';
+                        // Refrescar para crear nueva venta
+                        window.location.href = '/ventas/create-iva';
                     }
                 });
             } catch (e) {

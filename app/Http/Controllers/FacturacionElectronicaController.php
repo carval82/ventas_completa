@@ -402,17 +402,15 @@ class FacturacionElectronicaController extends Controller
      */
     private function sincronizarProductosAlegra()
     {
-        // Obtener configuración de Alegra
-        $configuracion = \App\Models\ConfiguracionFacturacion::where('proveedor', 'alegra')->first();
+        // SIEMPRE usar la configuración de la tabla empresas
+        $empresa = \App\Models\Empresa::first();
         
-        if (!$configuracion) {
-            throw new \Exception('No se encontró configuración para Alegra');
+        if (!$empresa || !$empresa->alegra_email || !$empresa->alegra_token) {
+            throw new \Exception('No se encontró configuración de Alegra en la empresa');
         }
 
-        $config = is_string($configuracion->configuracion) 
-            ? json_decode($configuracion->configuracion, true) 
-            : $configuracion->configuracion;
-        $alegraService = new \App\Services\AlegraService($config['usuario'], $config['token']);
+        // Usar AlegraService sin parámetros (usa la empresa internamente)
+        $alegraService = new \App\Services\AlegraService();
         
         // Obtener TODOS los productos de Alegra usando paginación
         $productosAlegra = $alegraService->obtenerTodosLosProductosPaginados();
@@ -508,17 +506,15 @@ class FacturacionElectronicaController extends Controller
      */
     private function sincronizarClientesAlegra()
     {
-        // Obtener configuración de Alegra
-        $configuracion = \App\Models\ConfiguracionFacturacion::where('proveedor', 'alegra')->first();
+        // SIEMPRE usar la configuración de la tabla empresas
+        $empresa = \App\Models\Empresa::first();
         
-        if (!$configuracion) {
-            throw new \Exception('No se encontró configuración para Alegra');
+        if (!$empresa || !$empresa->alegra_email || !$empresa->alegra_token) {
+            throw new \Exception('No se encontró configuración de Alegra en la empresa');
         }
 
-        $config = is_string($configuracion->configuracion) 
-            ? json_decode($configuracion->configuracion, true) 
-            : $configuracion->configuracion;
-        $alegraService = new \App\Services\AlegraService($config['usuario'], $config['token']);
+        // Usar AlegraService sin parámetros (usa la empresa internamente)
+        $alegraService = new \App\Services\AlegraService();
         
         // Obtener TODOS los clientes de Alegra usando paginación
         $clientesAlegra = $alegraService->obtenerTodosLosClientesPaginados();
@@ -724,17 +720,15 @@ class FacturacionElectronicaController extends Controller
      */
     private function obtenerProductosPreviewAlegra()
     {
-        // Obtener configuración de Alegra
-        $configuracion = \App\Models\ConfiguracionFacturacion::where('proveedor', 'alegra')->first();
+        // SIEMPRE usar la configuración de la tabla empresas
+        $empresa = \App\Models\Empresa::first();
         
-        if (!$configuracion) {
-            throw new \Exception('No se encontró configuración para Alegra');
+        if (!$empresa || !$empresa->alegra_email || !$empresa->alegra_token) {
+            throw new \Exception('No se encontró configuración de Alegra en la empresa');
         }
 
-        $config = is_string($configuracion->configuracion) 
-            ? json_decode($configuracion->configuracion, true) 
-            : $configuracion->configuracion;
-        $alegraService = new \App\Services\AlegraService($config['usuario'], $config['token']);
+        // Usar AlegraService sin parámetros (usa la empresa internamente)
+        $alegraService = new \App\Services\AlegraService();
         
         // Obtener TODOS los productos de Alegra usando paginación
         $productosAlegra = $alegraService->obtenerTodosLosProductosPaginados();
@@ -788,17 +782,15 @@ class FacturacionElectronicaController extends Controller
      */
     private function obtenerClientesPreviewAlegra()
     {
-        // Obtener configuración de Alegra
-        $configuracion = \App\Models\ConfiguracionFacturacion::where('proveedor', 'alegra')->first();
+        // SIEMPRE usar la configuración de la tabla empresas
+        $empresa = \App\Models\Empresa::first();
         
-        if (!$configuracion) {
-            throw new \Exception('No se encontró configuración para Alegra');
+        if (!$empresa || !$empresa->alegra_email || !$empresa->alegra_token) {
+            throw new \Exception('No se encontró configuración de Alegra en la empresa');
         }
 
-        $config = is_string($configuracion->configuracion) 
-            ? json_decode($configuracion->configuracion, true) 
-            : $configuracion->configuracion;
-        $alegraService = new \App\Services\AlegraService($config['usuario'], $config['token']);
+        // Usar AlegraService sin parámetros (usa la empresa internamente)
+        $alegraService = new \App\Services\AlegraService();
         
         // Obtener TODOS los clientes de Alegra usando paginación
         $clientesAlegra = $alegraService->obtenerTodosLosClientesPaginados();

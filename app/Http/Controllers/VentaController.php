@@ -41,6 +41,35 @@ class VentaController extends Controller
         // Obtener datos de la empresa
         $empresa = \App\Models\Empresa::first();
         
+        // Generar código QR si existe el texto pero no la imagen
+        if ($venta->qr_code && !str_starts_with($venta->qr_code, 'iVBOR')) {
+            // El QR es texto plano, convertirlo a imagen
+            Log::info('Generando QR para impresión', [
+                'venta_id' => $venta->id,
+                'qr_text_length' => strlen($venta->qr_code)
+            ]);
+            
+            $qrImage = $this->generarQRImagen($venta->qr_code);
+            $venta->qr_code_image = $qrImage;
+            
+            Log::info('QR generado', [
+                'venta_id' => $venta->id,
+                'qr_image_generated' => $qrImage !== null,
+                'qr_image_length' => $qrImage ? strlen($qrImage) : 0
+            ]);
+        } else {
+            Log::info('QR no generado', [
+                'venta_id' => $venta->id,
+                'tiene_qr_code' => $venta->qr_code !== null,
+                'empieza_con_iVBOR' => $venta->qr_code ? str_starts_with($venta->qr_code, 'iVBOR') : false
+            ]);
+        }
+        
+        // Si es factura electrónica, usar el nuevo diseño
+        if ($venta->esFacturaElectronica()) {
+            return view('ventas.print_factura_electronica', compact('venta', 'empresa'));
+        }
+        
         // Determinar la vista según el formato configurado
         $formato = $empresa->formato_impresion ?? '80mm';
         
@@ -56,12 +85,49 @@ class VentaController extends Controller
     }
     
     /**
+     * Genera imagen QR en SVG (sin base64, inline)
+     */
+    private function generarQRImagen($texto)
+    {
+        try {
+            // Generar SVG - retornar el SVG directo, no base64
+            $svg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
+                ->size(300)
+                ->margin(1)
+                ->generate($texto);
+            
+            Log::info('QR SVG generado', ['svg_length' => strlen($svg)]);
+            
+            // Retornar el SVG directamente (no base64)
+            return $svg;
+            
+        } catch (\Exception $e) {
+            Log::error('Error al generar QR', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return null;
+        }
+    }
+    
+    /**
      * Vista de impresión de factura en formato 58mm (forzado)
      */
     public function print58mm($id)
     {
         $venta = Venta::with(['cliente', 'detalles.producto', 'usuario'])->findOrFail($id);
         $empresa = \App\Models\Empresa::first();
+        
+        // Generar código QR si existe el texto
+        if ($venta->qr_code && !str_starts_with($venta->qr_code, 'iVBOR')) {
+            $qrImage = $this->generarQRImagen($venta->qr_code);
+            $venta->qr_code_image = $qrImage;
+        }
+        
+        // Si es factura electrónica, usar el nuevo diseño
+        if ($venta->esFacturaElectronica()) {
+            return view('ventas.print_factura_electronica', compact('venta', 'empresa'));
+        }
         
         return view('ventas.print_58mm', compact('venta', 'empresa'));
     }
@@ -73,6 +139,17 @@ class VentaController extends Controller
     {
         $venta = Venta::with(['cliente', 'detalles.producto', 'usuario'])->findOrFail($id);
         $empresa = \App\Models\Empresa::first();
+        
+        // Generar código QR si existe el texto
+        if ($venta->qr_code && !str_starts_with($venta->qr_code, 'iVBOR')) {
+            $qrImage = $this->generarQRImagen($venta->qr_code);
+            $venta->qr_code_image = $qrImage;
+        }
+        
+        // Si es factura electrónica, usar el nuevo diseño
+        if ($venta->esFacturaElectronica()) {
+            return view('ventas.print_factura_electronica', compact('venta', 'empresa'));
+        }
         
         return view('ventas.print', compact('venta', 'empresa'));
     }
@@ -86,6 +163,17 @@ class VentaController extends Controller
         
         // Obtener datos de la empresa
         $empresa = \App\Models\Empresa::first();
+        
+        // Generar código QR si existe el texto
+        if ($venta->qr_code && !str_starts_with($venta->qr_code, 'iVBOR')) {
+            $qrImage = $this->generarQRImagen($venta->qr_code);
+            $venta->qr_code_image = $qrImage;
+        }
+        
+        // Si es factura electrónica, usar el nuevo diseño
+        if ($venta->esFacturaElectronica()) {
+            return view('ventas.print_factura_electronica', compact('venta', 'empresa'));
+        }
         
         return view('ventas.print_media_carta', compact('venta', 'empresa'));
     }
@@ -513,6 +601,21 @@ class VentaController extends Controller
             // Obtener solo los detalles con productos válidos
             $detalles = $venta->detalles()->whereHas('producto')->get();
             
+            Log::info('📥 DETALLES OBTENIDOS DE LA BD', [
+                'venta_id' => $venta->id,
+                'total_detalles_bd' => count($detalles),
+                'detalles_bd' => $detalles->map(function($d) {
+                    return [
+                        'detalle_id' => $d->id,
+                        'producto_id' => $d->producto_id,
+                        'producto_nombre' => $d->producto->nombre ?? 'Sin nombre',
+                        'cantidad' => $d->cantidad,
+                        'precio' => $d->precio_unitario,
+                        'fecha_creacion' => $d->created_at
+                    ];
+                })->toArray()
+            ]);
+            
             // Array para agrupar detalles por producto_id y precio
             $detallesAgrupados = [];
             $productosLog = [];
@@ -593,9 +696,31 @@ class VentaController extends Controller
             
             $items = [];
             
+            // LOG CRÍTICO: Ver detalles agrupados ANTES de procesarlos
+            Log::info('🔍 DETALLES AGRUPADOS ANTES DE PROCESAR', [
+                'total_detalles_agrupados' => count($detallesAgrupados),
+                'claves' => array_keys($detallesAgrupados),
+                'detalles_completos' => array_map(function($clave, $detalle) {
+                    return [
+                        'clave' => $clave,
+                        'producto_id' => $detalle['producto']->id,
+                        'producto_nombre' => $detalle['producto']->nombre,
+                        'precio' => $detalle['precio_unitario'],
+                        'cantidad' => $detalle['cantidad']
+                    ];
+                }, array_keys($detallesAgrupados), $detallesAgrupados)
+            ]);
+            
             // Procesar los detalles agrupados - Mantener las claves únicas
             foreach ($detallesAgrupados as $claveUnica => $detalleAgrupado) {
                 $producto = $detalleAgrupado['producto'];
+                
+                Log::info('🔄 PROCESANDO DETALLE', [
+                    'clave_unica' => $claveUnica,
+                    'producto_id' => $producto->id,
+                    'producto_nombre' => $producto->nombre,
+                    'id_alegra' => $producto->id_alegra
+                ]);
                 
                 // Verificar que el producto tenga un ID en Alegra
                 if (!$producto->id_alegra) {
@@ -725,6 +850,16 @@ class VentaController extends Controller
                 ]);
                 
                 $items[] = $itemData;
+                
+                Log::info('✅ ITEM AGREGADO AL ARRAY', [
+                    'total_items_ahora' => count($items),
+                    'ultimo_item_agregado' => [
+                        'id_alegra' => $itemData['id'],
+                        'producto_nombre' => $producto->nombre,
+                        'precio' => $itemData['price'],
+                        'cantidad' => $itemData['quantity']
+                    ]
+                ]);
             }
             
             if (empty($items)) {
@@ -783,6 +918,20 @@ class VentaController extends Controller
                 'tax' => round($venta->iva, 2)
             ];
 
+            Log::info('🚀 DATOS FINALES PARA ALEGRA', [
+                'total_items' => count($items),
+                'items' => array_map(function($item, $index) {
+                    return [
+                        'posicion' => $index + 1,
+                        'id_alegra' => $item['id'],
+                        'precio' => $item['price'],
+                        'cantidad' => $item['quantity']
+                    ];
+                }, $items, array_keys($items)),
+                'subtotal_venta' => $venta->subtotal,
+                'total_venta' => $venta->total
+            ]);
+            
             Log::info('Preparando datos para Alegra', [
                 'alegra_data' => $alegraData
             ]);
@@ -815,7 +964,7 @@ class VentaController extends Controller
             if (isset($response['success']) && $response['success']) {
                 $data = $response['data'];
                 
-                // Actualizar venta con datos de Alegra
+                // Actualizar venta con datos iniciales de Alegra
                 $venta->update([
                     'alegra_id' => $data['id'],
                     'numero_factura_alegra' => $data['numberTemplate']['fullNumber'] ?? ($data['numberTemplate']['prefix'] ?? '') . ($data['numberTemplate']['formattedNumber'] ?? '') ?? null,
@@ -824,6 +973,37 @@ class VentaController extends Controller
                     'qr_code' => isset($data['stamp']) ? ($data['stamp']['barCodeContent'] ?? null) : null,
                     'estado_dian' => isset($data['stamp']) ? ($data['stamp']['legalStatus'] ?? null) : null
                 ]);
+                
+                // Si no hay QR en la respuesta inicial, consultar la factura para obtenerlo
+                if (!isset($data['stamp']['barCodeContent']) || !$data['stamp']['barCodeContent']) {
+                    Log::info('QR no disponible en respuesta inicial, consultando factura...', [
+                        'venta_id' => $venta->id,
+                        'alegra_id' => $data['id']
+                    ]);
+                    
+                    // Esperar 2 segundos para que Alegra procese el stamp
+                    sleep(2);
+                    
+                    // Consultar la factura para obtener el QR
+                    $facturaCompleta = $alegraService->obtenerFactura($data['id']);
+                    
+                    if (isset($facturaCompleta['success']) && $facturaCompleta['success']) {
+                        $facturaData = $facturaCompleta['data'];
+                        
+                        if (isset($facturaData['stamp']['barCodeContent'])) {
+                            $venta->update([
+                                'cufe' => $facturaData['stamp']['cufe'] ?? null,
+                                'qr_code' => $facturaData['stamp']['barCodeContent'] ?? null,
+                                'estado_dian' => $facturaData['stamp']['legalStatus'] ?? null
+                            ]);
+                            
+                            Log::info('QR obtenido exitosamente de consulta posterior', [
+                                'venta_id' => $venta->id,
+                                'cufe' => substr($facturaData['stamp']['cufe'] ?? '', 0, 20) . '...'
+                            ]);
+                        }
+                    }
+                }
 
                 return response()->json([
                     'success' => true,
@@ -1128,6 +1308,70 @@ class VentaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error interno: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Sincronizar QRs de facturas electrónicas pendientes
+     */
+    public function sincronizarQRs()
+    {
+        try {
+            $alegraService = new \App\Http\Services\AlegraService();
+            
+            // Buscar ventas con alegra_id pero sin qr_code
+            $ventasSinQR = Venta::whereNotNull('alegra_id')
+                ->whereNull('qr_code')
+                ->get();
+            
+            $actualizadas = 0;
+            $errores = 0;
+            
+            foreach ($ventasSinQR as $venta) {
+                Log::info('Sincronizando QR para venta', [
+                    'venta_id' => $venta->id,
+                    'alegra_id' => $venta->alegra_id
+                ]);
+                
+                // Consultar factura en Alegra
+                $resultado = $alegraService->obtenerFactura($venta->alegra_id);
+                
+                if (isset($resultado['success']) && $resultado['success']) {
+                    $data = $resultado['data'];
+                    
+                    if (isset($data['stamp']['barCodeContent'])) {
+                        $venta->update([
+                            'cufe' => $data['stamp']['cufe'] ?? null,
+                            'qr_code' => $data['stamp']['barCodeContent'],
+                            'estado_dian' => $data['stamp']['legalStatus'] ?? null,
+                            'url_pdf_alegra' => $data['stamp']['pdfUrl'] ?? null
+                        ]);
+                        
+                        $actualizadas++;
+                    } else {
+                        $errores++;
+                    }
+                } else {
+                    $errores++;
+                }
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => "QRs sincronizados: {$actualizadas} actualizados, {$errores} pendientes",
+                'actualizadas' => $actualizadas,
+                'errores' => $errores
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error al sincronizar QRs', [
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al sincronizar QRs: ' . $e->getMessage()
             ]);
         }
     }

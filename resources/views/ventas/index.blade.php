@@ -7,9 +7,14 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3">Ventas</h1>
-        <a href="{{ route('ventas.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Nueva Venta
-        </a>
+        <div>
+            <button type="button" class="btn btn-success me-2" onclick="sincronizarQRs()">
+                <i class="fas fa-qrcode"></i> Sincronizar QRs
+            </button>
+            <a href="{{ route('ventas.create') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nueva Venta
+            </a>
+        </div>
     </div>
 
     <!-- Filtros -->
@@ -315,6 +320,58 @@ function verificarEstadoFactura(ventaId) {
         
         console.error('Error:', error);
         
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de Conexión',
+            text: 'No se pudo conectar con el servidor',
+            confirmButtonText: 'Aceptar'
+        });
+    });
+}
+
+// Función para sincronizar QRs
+function sincronizarQRs() {
+    Swal.fire({
+        title: 'Sincronizando QRs...',
+        html: 'Consultando facturas en Alegra',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    fetch('{{ route('ventas.sincronizar-qrs') }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: 'QRs Sincronizados',
+                html: `
+                    <p><strong>Actualizados:</strong> ${data.actualizadas}</p>
+                    <p><strong>Pendientes:</strong> ${data.errores}</p>
+                `,
+                confirmButtonText: 'Aceptar'
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Error al sincronizar QRs',
+                confirmButtonText: 'Aceptar'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
         Swal.fire({
             icon: 'error',
             title: 'Error de Conexión',

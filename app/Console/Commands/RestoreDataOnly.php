@@ -97,14 +97,89 @@ class RestoreDataOnly extends Command
                     }
                 }
                 
-                // Procesar productos en lotes
-                $this->info('Procesando sentencias INSERT...');
+                // Procesar INSERT línea por línea (método robusto)
+                $this->info('Procesando sentencias INSERT línea por línea...');
                 
-                // Extraer todas las sentencias INSERT completas - patrón mejorado
-                $pattern = '/INSERT INTO `([^`]+)`\s*(\([^)]+\))?\s*VALUES\s*(.*?);/s';
-                preg_match_all($pattern, $sqlContent, $matches, PREG_SET_ORDER);
+                // Extraer INSERT procesando línea por línea
+                $lines = explode("\n", $sqlContent);
+                $matches = [];
+                $currentInsertTable = null;
+                $currentInsertColumns = '';
+                $currentInsertValues = '';
+                $inInsertStatement = false;
+                
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    
+                    // Detectar inicio de INSERT
+                    if (preg_match('/^INSERT INTO `([^`]+)`\s*(\([^)]+\))?\s*VALUES\s*(.*)$/i', $line, $match)) {
+                        // Si había un INSERT previo, guardarlo
+                        if ($inInsertStatement && $currentInsertTable) {
+                            $matches[] = [
+                                0 => "INSERT INTO `{$currentInsertTable}` {$currentInsertColumns} VALUES {$currentInsertValues};",
+                                1 => $currentInsertTable,
+                                2 => $currentInsertColumns,
+                                3 => $currentInsertValues
+                            ];
+                        }
+                        
+                        // Iniciar nuevo INSERT
+                        $currentInsertTable = $match[1];
+                        $currentInsertColumns = isset($match[2]) ? $match[2] : '';
+                        $currentInsertValues = isset($match[3]) ? $match[3] : '';
+                        $inInsertStatement = true;
+                        
+                        // Si termina con ; en la misma línea, es un INSERT completo
+                        if (substr($line, -1) === ';') {
+                            $currentInsertValues = rtrim($currentInsertValues, ';');
+                            $matches[] = [
+                                0 => "INSERT INTO `{$currentInsertTable}` {$currentInsertColumns} VALUES {$currentInsertValues};",
+                                1 => $currentInsertTable,
+                                2 => $currentInsertColumns,
+                                3 => $currentInsertValues
+                            ];
+                            $inInsertStatement = false;
+                            $currentInsertTable = null;
+                            $currentInsertColumns = '';
+                            $currentInsertValues = '';
+                        }
+                    } elseif ($inInsertStatement) {
+                        // Continuar acumulando el INSERT de múltiples líneas
+                        $currentInsertValues .= ' ' . $line;
+                        
+                        // Si termina con ;, es el final del INSERT
+                        if (substr($line, -1) === ';') {
+                            $currentInsertValues = rtrim($currentInsertValues, ';');
+                            $matches[] = [
+                                0 => "INSERT INTO `{$currentInsertTable}` {$currentInsertColumns} VALUES {$currentInsertValues};",
+                                1 => $currentInsertTable,
+                                2 => $currentInsertColumns,
+                                3 => $currentInsertValues
+                            ];
+                            $inInsertStatement = false;
+                            $currentInsertTable = null;
+                            $currentInsertColumns = '';
+                            $currentInsertValues = '';
+                        }
+                    }
+                }
+                
+                // Guardar último INSERT si quedó pendiente
+                if ($inInsertStatement && $currentInsertTable) {
+                    $currentInsertValues = rtrim($currentInsertValues, ';');
+                    $matches[] = [
+                        0 => "INSERT INTO `{$currentInsertTable}` {$currentInsertColumns} VALUES {$currentInsertValues};",
+                        1 => $currentInsertTable,
+                        2 => $currentInsertColumns,
+                        3 => $currentInsertValues
+                    ];
+                }
                 
                 $this->info('Sentencias INSERT encontradas: ' . count($matches));
+                Log::info('Sentencias INSERT encontradas mediante parseo línea por línea', [
+                    'total_inserts' => count($matches),
+                    'metodo' => 'linea_por_linea'
+                ]);
                 
                 // Si no se encontraron sentencias INSERT, intentar con otro patrón más simple
                 if (count($matches) == 0) {
@@ -138,11 +213,10 @@ class RestoreDataOnly extends Command
                         $this->warn('No se encontraron sentencias INSERT en el archivo de backup');
                     }
                 } else {
-                    // Procesar las sentencias INSERT encontradas
+                    // CORRECCIÓN: Agrupar todas las sentencias INSERT por tabla
+                    $insertsPorTabla = [];
                     foreach ($matches as $match) {
                         $tabla = $match[1];
-                        $columnsPart = isset($match[2]) ? $match[2] : '';
-                        $valuesStatement = $match[3];
                         
                         // Verificar si la tabla existe
                         if (!Schema::hasTable($tabla)) {
@@ -150,66 +224,151 @@ class RestoreDataOnly extends Command
                             continue;
                         }
                         
-                        $this->info("Procesando inserciones para la tabla: {$tabla}");
+                        // Acumular los INSERT de esta tabla
+                        if (!isset($insertsPorTabla[$tabla])) {
+                            $insertsPorTabla[$tabla] = [];
+                        }
                         
-                        // Extraer los conjuntos de valores
-                        $pattern = '/\(([^)]+)\)/';
-                        preg_match_all($pattern, $valuesStatement, $valueMatches);
-                        
-                        $this->info("  - Valores encontrados: " . count($valueMatches[0]));
+                        $insertsPorTabla[$tabla][] = [
+                            'columns' => isset($match[2]) ? $match[2] : '',
+                            'values' => $match[3]
+                        ];
+                    }
+                    
+                    $this->info('Tablas con datos: ' . count($insertsPorTabla));
+                    Log::info('Tablas agrupadas para restauración', [
+                        'total_tablas' => count($insertsPorTabla),
+                        'tablas' => array_keys($insertsPorTabla),
+                        'bloques_por_tabla' => array_map('count', $insertsPorTabla)
+                    ]);
+                    
+                    // Procesar cada tabla con TODOS sus INSERT acumulados
+                    foreach ($insertsPorTabla as $tabla => $todosLosInserts) {
+                        $this->info("Procesando tabla: {$tabla} con " . count($todosLosInserts) . " bloques INSERT");
+                        Log::info("Procesando tabla {$tabla}", [
+                            'bloques_insert' => count($todosLosInserts)
+                        ]);
                         
                         // Obtener las columnas de la tabla
                         $columnasDB = Schema::getColumnListing($tabla);
                         
-                        // Extraer las columnas del INSERT
+                        // Recopilar TODOS los valores de TODOS los INSERT de esta tabla
+                        $todosLosValores = [];
                         $columnasBackup = [];
-                        if (!empty($columnsPart)) {
-                            // Si las columnas están especificadas en el INSERT
-                            preg_match('/\(([^)]+)\)/', $columnsPart, $columnMatches);
-                            if (isset($columnMatches[1])) {
-                                $columnasBackup = array_map('trim', explode(',', str_replace('`', '', $columnMatches[1])));
+                        
+                        foreach ($todosLosInserts as $indiceInsert => $insertData) {
+                            $columnsPart = $insertData['columns'];
+                            $valuesStatement = $insertData['values'];
+                            
+                            // Extraer las columnas del INSERT (solo del primer INSERT)
+                            if ($indiceInsert === 0) {
+                                if (!empty($columnsPart)) {
+                                    // Si las columnas están especificadas en el INSERT
+                                    preg_match('/\(([^)]+)\)/', $columnsPart, $columnMatches);
+                                    if (isset($columnMatches[1])) {
+                                        $columnasBackup = array_map('trim', explode(',', str_replace('`', '', $columnMatches[1])));
+                                    }
+                                } else {
+                                    // Si no hay columnas especificadas, necesitamos inferir cuáles eran
+                                    $this->warn("  ⚠ INSERT sin columnas - detectando estructura");
+                                    
+                                    // Extraer un valor de ejemplo para contar cuántas columnas tiene el backup
+                                    $pattern = '/\(([^)]+)\)/';
+                                    preg_match($pattern, $valuesStatement, $valueMatch);
+                                    
+                                    if (isset($valueMatch[1])) {
+                                        $valoresEjemplo = $this->parseValues($valueMatch[0]);
+                                        $numValoresBackup = count($valoresEjemplo);
+                                        $numColumnasDB = count($columnasDB);
+                                        
+                                        $this->info("  Valores en backup: $numValoresBackup");
+                                        $this->info("  Columnas en BD: $numColumnasDB");
+                                        
+                                        if ($numValoresBackup < $numColumnasDB) {
+                                            // El backup tiene menos columnas - usar solo las primeras N
+                                            $columnasBackup = array_slice($columnasDB, 0, $numValoresBackup);
+                                            $this->warn("  ⚠ Backup tiene menos columnas - usando primeras $numValoresBackup");
+                                        } else {
+                                            // Mismo número o más - usar todas
+                                            $columnasBackup = $columnasDB;
+                                        }
+                                        
+                                        Log::warning("INSERT sin columnas para tabla {$tabla}", [
+                                            'columnas_bd' => $numColumnasDB,
+                                            'valores_backup' => $numValoresBackup,
+                                            'columnas_usadas' => count($columnasBackup)
+                                        ]);
+                                    } else {
+                                        // No se pudo extraer valores - usar todas las columnas
+                                        $columnasBackup = $columnasDB;
+                                        $this->warn("  ⚠ No se pudo contar valores - usando todas las columnas");
+                                    }
+                                }
                             }
-                        } else {
-                            // Si no hay columnas especificadas, usar todas las columnas de la tabla
-                            $columnasBackup = $columnasDB;
+                            
+                            // Extraer los conjuntos de valores de ESTE INSERT
+                            $pattern = '/\(([^)]+)\)/';
+                            preg_match_all($pattern, $valuesStatement, $valueMatches);
+                            
+                            // Agregar a la colección total
+                            foreach ($valueMatches[0] as $valorConjunto) {
+                                $todosLosValores[] = $valorConjunto;
+                            }
                         }
                         
+                        $this->info("  - Total de registros encontrados: " . count($todosLosValores));
+                        Log::info("Registros totales encontrados en tabla {$tabla}", [
+                            'total_valores' => count($todosLosValores),
+                            'bloques_procesados' => count($todosLosInserts)
+                        ]);
                         $this->info("  - Columnas en el backup: " . implode(", ", $columnasBackup));
                         $this->info("  - Columnas en la BD: " . implode(", ", $columnasDB));
                         
                         // Verificar compatibilidad de columnas
                         $columnasCompatibles = array_intersect($columnasBackup, $columnasDB);
                         
-                        $this->info("  - Columnas compatibles: " . count($columnasCompatibles));
+                        // Si el INSERT no tenía columnas y faltan algunas, usar TODAS las columnas de la BD
+                        $usarTodasColumnas = (count($columnasBackup) < count($columnasDB));
+                        if ($usarTodasColumnas) {
+                            $this->warn("  ⚠ Detectadas columnas faltantes - insertando con valores NULL para nuevas columnas");
+                            $columnasParaInsert = $columnasDB;  // Usar TODAS las columnas
+                        } else {
+                            $columnasParaInsert = $columnasCompatibles;  // Solo las compatibles
+                        }
                         
-                        if (count($columnasCompatibles) > 0) {
+                        $this->info("  - Columnas compatibles: " . count($columnasCompatibles));
+                        $this->info("  - Columnas para INSERT: " . count($columnasParaInsert));
+                        
+                        if (count($columnasCompatibles) > 0 && count($todosLosValores) > 0) {
                             // Procesar en lotes de 50
-                            $lotes = array_chunk($valueMatches[0], 50);
+                            $lotes = array_chunk($todosLosValores, 50);
                             
                             $this->info("  - Procesando " . count($lotes) . " lotes");
                             
                             foreach ($lotes as $index => $lote) {
                                 try {
                                     // Construir sentencia INSERT para este lote
-                                    $insertQuery = "INSERT INTO `{$tabla}` (`" . implode("`, `", $columnasCompatibles) . "`) VALUES ";
+                                    $insertQuery = "INSERT INTO `{$tabla}` (`" . implode("`, `", $columnasParaInsert) . "`) VALUES ";
                                     
                                     $valuesArray = [];
                                     foreach ($lote as $values) {
                                         // Extraer los valores individuales respetando las comillas
                                         $valoresIndividuales = $this->parseValues($values);
                                         
-                                        // Seleccionar solo los valores para las columnas compatibles
-                                        $valoresCompatibles = [];
-                                        foreach ($columnasCompatibles as $columna) {
+                                        // Mapear valores a las columnas de destino
+                                        $valoresParaInsertar = [];
+                                        foreach ($columnasParaInsert as $columna) {
                                             $posicionEnBackup = array_search($columna, $columnasBackup);
                                             if ($posicionEnBackup !== false && isset($valoresIndividuales[$posicionEnBackup])) {
-                                                $valoresCompatibles[] = $this->formatearValorSQL($valoresIndividuales[$posicionEnBackup]);
+                                                // Valor existe en el backup
+                                                $valoresParaInsertar[] = $this->formatearValorSQL($valoresIndividuales[$posicionEnBackup]);
                                             } else {
-                                                $valoresCompatibles[] = 'NULL';
+                                                // Columna nueva que no está en el backup - usar NULL
+                                                $valoresParaInsertar[] = 'NULL';
                                             }
                                         }
                                         
-                                        $valuesArray[] = "(" . implode(", ", $valoresCompatibles) . ")";
+                                        $valuesArray[] = "(" . implode(", ", $valoresParaInsertar) . ")";
                                     }
                                     
                                     $insertQuery .= implode(", ", $valuesArray);
@@ -262,6 +421,24 @@ class RestoreDataOnly extends Command
                 'inserciones_exitosas' => $insercionesExitosas,
                 'inserciones_fallidas' => $insercionesFallidas
             ]);
+            
+            // Contar registros finales por tabla para verificación
+            $conteoFinal = [];
+            $totalFinal = 0;
+            foreach ($tablasLimpiadas as $tabla) {
+                if (Schema::hasTable($tabla)) {
+                    $count = DB::table($tabla)->count();
+                    $conteoFinal[$tabla] = $count;
+                    $totalFinal += $count;
+                }
+            }
+            
+            Log::info('Conteo final de registros después de restauración', [
+                'total_registros' => $totalFinal,
+                'por_tabla' => $conteoFinal
+            ]);
+            
+            $this->info("Total de registros restaurados: {$totalFinal}");
             
             return 0;
         } catch (\Exception $e) {

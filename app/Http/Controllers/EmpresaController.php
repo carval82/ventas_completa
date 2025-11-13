@@ -632,13 +632,17 @@ class EmpresaController extends Controller
         
         // Formatear el número de resolución
         $numeroResolucion = $resolucion['resolution'] ?? $resolucion['resolutionNumber'] ?? 'No disponible';
+        $numeroResolucion = is_array($numeroResolucion) ? json_encode($numeroResolucion) : $numeroResolucion;
         
         // Formatear el prefijo
         $prefijo = $resolucion['prefix'] ?? '';
+        $prefijo = is_array($prefijo) ? '' : $prefijo;
         
         // Formatear el rango de numeración
         $minNumber = $resolucion['initialNumber'] ?? $resolucion['minInvoiceNumber'] ?? 'No disponible';
+        $minNumber = is_array($minNumber) ? 'No disponible' : $minNumber;
         $maxNumber = $resolucion['finalNumber'] ?? $resolucion['maxInvoiceNumber'] ?? 'No disponible';
+        $maxNumber = is_array($maxNumber) ? 'No disponible' : $maxNumber;
         
         // Crear texto completo de la resolución
         $texto = "Resolución DIAN No. {$numeroResolucion} del {$fechaInicio} - ";

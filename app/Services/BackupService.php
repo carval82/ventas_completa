@@ -922,7 +922,23 @@ class BackupService
             // Paso 5: Contar registros restaurados
             $resultado['tablas_procesadas'] = $this->contarTablasConDatos();
             
+            // Contar registros por tabla para comparar con el backup original
+            $conteoFinal = [];
+            $totalFinal = 0;
+            foreach (['productos', 'clientes', 'ventas', 'detalle_ventas', 'movimientos_contables', 'empresas', 'comprobantes', 'proveedores', 'categorias', 'marcas'] as $tabla) {
+                if (Schema::hasTable($tabla)) {
+                    $count = DB::table($tabla)->count();
+                    $conteoFinal[$tabla] = $count;
+                    $totalFinal += $count;
+                }
+            }
+            
+            $resultado['conteo_final'] = $conteoFinal;
+            $resultado['total_registros_final'] = $totalFinal;
+            
             Log::info('Restauración robusta completada', $resultado);
+            Log::info('Conteo final de registros por tabla:', $conteoFinal);
+            Log::info('Total de registros restaurados: ' . $totalFinal);
             
         } catch (\Exception $e) {
             // Restaurar configuración en caso de error
@@ -982,18 +998,42 @@ class BackupService
      */
     private function dividirSQLEnBloques($sqlContent)
     {
-        // Primero extraer todos los bloques INSERT
+        // Primero extraer todos los bloques INSERT (ahora devuelve arrays por tabla)
         $todosLosBloques = $this->extraerTodosLosBloques($sqlContent);
         
         // Luego ordenarlos según dependencias
         $bloquesOrdenados = $this->ordenarBloquesPorDependencias($todosLosBloques);
         
-        Log::info('Bloques ordenados por dependencias', [
-            'total_bloques' => count($bloquesOrdenados),
-            'orden' => array_keys($bloquesOrdenados)
+        // Aplanar el array: convertir arrays de bloques por tabla en un solo array
+        $bloquesAplanados = [];
+        $contadorBloques = 0;
+        
+        foreach ($bloquesOrdenados as $tabla => $bloquesTabla) {
+            if (is_array($bloquesTabla)) {
+                // Es un array de bloques para esta tabla
+                Log::info("Tabla {$tabla} tiene " . count($bloquesTabla) . " bloques");
+                foreach ($bloquesTabla as $indiceBloque => $bloque) {
+                    // Contar registros aproximados en este bloque
+                    $registrosAprox = substr_count($bloque, '),(') + 1;
+                    Log::info("  - Bloque " . ($indiceBloque + 1) . " de {$tabla}: ~{$registrosAprox} registros");
+                    $bloquesAplanados[] = $bloque;
+                    $contadorBloques++;
+                }
+            } else {
+                // Es un solo bloque (compatibilidad con código antiguo)
+                Log::info("Tabla {$tabla} tiene 1 bloque (legacy)");
+                $bloquesAplanados[] = $bloquesTabla;
+                $contadorBloques++;
+            }
+        }
+        
+        Log::info('Bloques ordenados y aplanados', [
+            'total_tablas' => count($bloquesOrdenados),
+            'total_bloques' => $contadorBloques,
+            'orden_tablas' => array_keys($bloquesOrdenados)
         ]);
         
-        return array_values($bloquesOrdenados);
+        return $bloquesAplanados;
     }
     
     /**
@@ -1025,7 +1065,11 @@ class BackupService
             if (stripos($lineaLimpia, 'INSERT INTO') === 0) {
                 // Guardar bloque anterior si existe
                 if (!empty($bloqueActual) && !empty($tablaActual)) {
-                    $bloques[$tablaActual] = $bloqueActual;
+                    // CORREGIDO: Acumular bloques en lugar de sobrescribir
+                    if (!isset($bloques[$tablaActual])) {
+                        $bloques[$tablaActual] = [];
+                    }
+                    $bloques[$tablaActual][] = $bloqueActual;
                 }
                 
                 // Extraer nombre de tabla
@@ -1042,7 +1086,11 @@ class BackupService
                 // Detectar fin de bloque
                 if (substr(rtrim($lineaLimpia), -1) === ';') {
                     if (!empty($tablaActual)) {
-                        $bloques[$tablaActual] = $bloqueActual;
+                        // CORREGIDO: Acumular bloques en lugar de sobrescribir
+                        if (!isset($bloques[$tablaActual])) {
+                            $bloques[$tablaActual] = [];
+                        }
+                        $bloques[$tablaActual][] = $bloqueActual;
                     }
                     $bloqueActual = '';
                     $tablaActual = '';
@@ -1053,7 +1101,11 @@ class BackupService
         
         // Agregar último bloque si existe
         if (!empty($bloqueActual) && !empty($tablaActual)) {
-            $bloques[$tablaActual] = $bloqueActual;
+            // CORREGIDO: Acumular bloques en lugar de sobrescribir
+            if (!isset($bloques[$tablaActual])) {
+                $bloques[$tablaActual] = [];
+            }
+            $bloques[$tablaActual][] = $bloqueActual;
         }
         
         return $bloques;
@@ -1588,6 +1640,7 @@ class BackupService
             'detalle_ventas',      // Primero las tablas dependientes
             'detalle_compras',
             'movimientos_contables',
+            'comprobantes',        // Comprobantes contables
             'ventas',
             'compras',
             'productos',
@@ -1595,7 +1648,10 @@ class BackupService
             'marcas',
             'clientes',
             'proveedores',
-            'codigos_relacionados'
+            'codigos_relacionados',
+            'configuracion_contable',  // Configuración contable
+            'plan_cuentas',       // Plan de cuentas
+            'empresas'            // Limpiar empresas para permitir restauración
         ];
         
         Log::info('Limpiando tablas principales antes de la restauración', [
@@ -1954,9 +2010,13 @@ class BackupService
         if (preg_match('/VALUES\s*(.+);?$/i', $linea, $matches)) {
             $valuesContent = $matches[1];
             
-            // Contar registros basándose en los paréntesis de apertura
-            $count = substr_count($valuesContent, '(');
-            return max(1, $count); // Al menos 1 registro si hay VALUES
+            // Contar registros basándose en los separadores "),(" entre registros
+            // Cada "),(" indica un nuevo registro
+            $count = substr_count($valuesContent, '),(');
+            
+            // Si hay separadores, significa que hay count + 1 registros
+            // Si no hay separadores pero hay VALUES, hay 1 registro
+            return $count > 0 ? $count + 1 : 1;
         }
         
         return 0;

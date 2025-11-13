@@ -17,6 +17,8 @@ class AlegraService
     protected $user;
     protected $token;
     protected $httpClient;
+    protected $empresaCache; // Cache de empresa para evitar N+1 queries
+    protected $credencialesCache; // Cache de credenciales
     
     // Endpoints de Alegra
     const ENDPOINT_CLIENTES = '/contacts';
@@ -1560,9 +1562,18 @@ class AlegraService
      */
     protected function obtenerCredencialesAlegra()
     {
+        // Si ya tenemos las credenciales en caché, retornarlas
+        if ($this->credencialesCache !== null) {
+            return $this->credencialesCache;
+        }
+        
         try {
-            // Intentar obtener las credenciales de la empresa
-            $empresa = \App\Models\Empresa::first();
+            // Si no tenemos la empresa en caché, obtenerla una sola vez
+            if ($this->empresaCache === null) {
+                $this->empresaCache = \App\Models\Empresa::first();
+            }
+            
+            $empresa = $this->empresaCache;
             
             if ($empresa && $empresa->alegra_email && $empresa->alegra_token) {
                 // Usar credenciales de la empresa
@@ -1578,23 +1589,27 @@ class AlegraService
             
             if (empty($email) || empty($token)) {
                 Log::error('Credenciales de Alegra vacías');
-                return [
+                $this->credencialesCache = [
                     'success' => false,
                     'message' => 'Credenciales de Alegra no configuradas'
                 ];
+                return $this->credencialesCache;
             }
             
-            return [
+            $this->credencialesCache = [
                 'success' => true,
                 'email' => $email,
                 'token' => $token
             ];
+            
+            return $this->credencialesCache;
         } catch (\Exception $e) {
             Log::error('Error al obtener credenciales de Alegra: ' . $e->getMessage());
-            return [
+            $this->credencialesCache = [
                 'success' => false,
                 'message' => 'Error al obtener credenciales de Alegra: ' . $e->getMessage()
             ];
+            return $this->credencialesCache;
         }
     }
 
@@ -2297,6 +2312,8 @@ class AlegraService
             // Configurar opciones de cURL
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30); // Timeout de 30 segundos
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10); // Timeout de conexión 10 segundos
             curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 'Content-Type: application/json',
                 'Accept: application/json',

@@ -2,52 +2,265 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Factura #{{ $venta->getNumeroFacturaMostrar() }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factura Electrónica #{{ $venta->getNumeroFacturaMostrar() }}</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 14px;
+        * {
             margin: 0;
-            padding: 5mm;
+            padding: 0;
+            box-sizing: border-box;
         }
+        
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10px;
+            line-height: 1.3;
+            color: #000;
+            background: #fff;
+        }
+        
         .ticket {
             width: 80mm;
             margin: 0 auto;
-            position: relative;
-            padding: 8mm;
+            padding: 3mm;
         }
+        
+        /* Encabezado */
         .header {
             text-align: center;
-            margin-bottom: 5mm;
+            margin-bottom: 4mm;
+            padding-bottom: 3mm;
+            border-bottom: 1px dashed #333;
         }
-        .header img {
-            max-width: 60mm;
-            height: auto;
-            margin-bottom: 2mm;
+        
+        .header .logo {
+            width: 20mm;
+            height: 20mm;
+            margin: 0 auto 2mm;
         }
-        .header h2 {
-            margin: 0 0 1mm 0;
-            font-size: 18px;
+        
+        .header h1 {
+            font-size: 13px;
             font-weight: bold;
+            margin: 1mm 0;
+            text-transform: uppercase;
         }
+        
         .header p {
+            font-size: 9px;
             margin: 0.5mm 0;
-            line-height: 1.3;
+        }
+        
+        /* Información de factura */
+        .invoice-header {
+            text-align: center;
+            margin: 3mm 0;
+            padding: 2mm 0;
+            border-top: 1px dashed #333;
+            border-bottom: 1px dashed #333;
+        }
+        
+        .invoice-header h2 {
+            font-size: 11px;
             font-weight: bold;
+            margin-bottom: 1mm;
         }
-        .info p {
-            margin: 2mm 0;
+        
+        .invoice-header p {
+            font-size: 9px;
+            margin: 0.5mm 0;
         }
-        .table {
+        
+        /* Información del cliente */
+        .client-info {
+            margin: 3mm 0;
+            font-size: 9px;
+        }
+        
+        .client-info p {
+            margin: 1mm 0;
+        }
+        
+        .client-info strong {
+            font-weight: bold;
+            display: inline-block;
+            width: 18mm;
+        }
+        
+        /* Tabla de productos */
+        .products-table {
             width: 100%;
-            margin: 5mm 0;
+            margin: 3mm 0;
             border-collapse: collapse;
+            font-size: 8px;
         }
-        .table th, .table td {
-            padding: 2mm;
+        
+        .products-table thead {
+            border-top: 1px solid #333;
+            border-bottom: 1px solid #333;
+        }
+        
+        .products-table th {
+            padding: 1.5mm 0.5mm;
+            text-align: center;
+            font-weight: bold;
+            font-size: 8px;
+        }
+        
+        .products-table td {
+            padding: 1.5mm 0.5mm;
+            vertical-align: top;
+            text-align: center;
+            border-bottom: 1px dotted #ccc;
+        }
+        
+        .products-table td.text-left {
             text-align: left;
         }
+        
+        .products-table td.text-right {
+            text-align: right;
+        }
+        
+        /* Tabla de impuestos */
+        .tax-table {
+            width: 100%;
+            margin: 2mm 0;
+            border-collapse: collapse;
+            font-size: 8px;
+        }
+        
+        .tax-table thead {
+            border-bottom: 1px solid #333;
+        }
+        
+        .tax-table th {
+            padding: 1mm 0.5mm;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .tax-table td {
+            padding: 1mm 0.5mm;
+            text-align: center;
+        }
+        
+        .tax-table td.text-right {
+            text-align: right;
+        }
+        
+        /* Totales */
+        .totals {
+            margin: 3mm 0;
+            font-size: 9px;
+            border-top: 1px dashed #333;
+            padding-top: 2mm;
+        }
+        
+        .totals .row {
+            display: flex;
+            justify-content: space-between;
+            margin: 1mm 0;
+        }
+        
+        .totals .row.highlight {
+            font-weight: bold;
+            font-size: 11px;
+            border-top: 1px solid #333;
+            border-bottom: 2px solid #333;
+            padding: 2mm 0;
+            margin: 2mm 0;
+        }
+        
+        .totals .label {
+            text-align: left;
+        }
+        
+        .totals .value {
+            text-align: right;
+            font-weight: bold;
+        }
+        
+        /* Información de pago */
+        .payment-info {
+            margin: 3mm 0;
+            font-size: 9px;
+            border-top: 1px dashed #333;
+            padding-top: 2mm;
+        }
+        
+        .payment-info .row {
+            display: flex;
+            justify-content: space-between;
+            margin: 1mm 0;
+        }
+        
+        /* CUFE */
+        .cufe-section {
+            margin: 3mm 0;
+            padding: 2mm 0;
+            border-top: 1px dashed #333;
+        }
+        
+        .cufe-section h3 {
+            font-size: 9px;
+            font-weight: bold;
+            margin-bottom: 1mm;
+            text-align: center;
+        }
+        
+        .cufe-section .cufe-code {
+            font-size: 7px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            text-align: justify;
+            line-height: 1.2;
+        }
+        
+        /* Código QR */
+        .qr-section {
+            text-align: center;
+            margin: 4mm 0;
+            padding: 3mm 0;
+            border-top: 1px dashed #333;
+        }
+        
+        .qr-section .qr-code {
+            width: 45mm;
+            height: 45mm;
+            margin: 2mm auto;
+        }
+        
+        /* Texto legal */
+        .legal-text {
+            font-size: 7px;
+            text-align: justify;
+            line-height: 1.3;
+            margin: 3mm 0;
+            padding: 2mm 0;
+            border-top: 1px dashed #333;
+        }
+        
+        .legal-text p {
+            margin: 1mm 0;
+        }
+        
+        /* Proveedor tecnológico */
+        .tech-provider {
+            text-align: center;
+            font-size: 7px;
+            margin: 2mm 0;
+            padding: 2mm 0;
+            border-top: 1px dashed #333;
+        }
+        
+        .tech-provider p {
+            margin: 0.5mm 0;
+        }
+        
         .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .text-bold { font-weight: bold; }
         .text-center { text-align: center; }
         .divider {
             border-bottom: 1px dashed #000;
@@ -195,13 +408,15 @@
 
         <div class="divider"></div>
 
-        @if($venta->qr_code || $venta->qr_local)
+        {{-- Debug: {{ isset($venta->qr_code_image) ? 'QR_IMAGE_EXISTS' : 'QR_IMAGE_MISSING' }} --}}
+        
+        @if(($venta->qr_code && isset($venta->qr_code_image)) || $venta->qr_local)
             <div class="text-center" style="margin: 5mm 0;">
-                @if($venta->qr_code)
+                @if($venta->qr_code && isset($venta->qr_code_image))
                     <p><small><strong>Código QR DIAN (Factura Electrónica)</strong></small></p>
-                    <img src="data:image/png;base64,{{ $venta->qr_code }}" 
-                         alt="QR DIAN" 
-                         style="width: 40mm; height: 40mm; margin: 2mm auto;">
+                    <div style="width: 40mm; height: 40mm; margin: 2mm auto;">
+                        {!! $venta->qr_code_image !!}
+                    </div>
                     @if($venta->cufe)
                         <div style="font-family: monospace; font-size: 10px; font-weight: bold; word-break: break-all; max-width: 60mm; margin: 2mm auto;">
                             CUFE: {{ $venta->cufe }}
