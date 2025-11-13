@@ -661,8 +661,11 @@
                         $empresa = \App\Models\Empresa::first();
                     @endphp
                     
-                    @if($empresa && file_exists(public_path('images/logo.png')))
-                        <img src="{{ asset('images/logo.png') }}" alt="Logo de la empresa" class="img-fluid mb-3" style="max-height: 100px;">
+                    @if($empresa && $empresa->logo)
+                        <img src="{{ asset('storage/' . $empresa->logo) }}" 
+                             alt="Logo de la empresa" 
+                             class="img-fluid mb-3" 
+                             style="max-height: 100px;">
                     @endif
                     
                     @if($empresa)

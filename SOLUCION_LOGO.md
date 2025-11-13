@@ -1,7 +1,9 @@
 # Solución al Problema del Logo
 
-## Problema
-El logo de la empresa no se visualiza en la interfaz ni en las facturas PDF.
+## Problemas Resueltos
+1. ❌ El logo de la empresa no se visualizaba en la interfaz ni en las facturas PDF
+2. ❌ Había un logo hardcodeado (`public/images/logo.png`) que se mostraba por defecto
+3. ❌ El sistema no usaba el logo configurado desde la base de datos
 
 ## Causa
 Falta crear el enlace simbólico entre `storage/app/public` y `public/storage` que permite acceder públicamente a los archivos almacenados.
@@ -47,15 +49,37 @@ Sin este enlace, aunque el logo se guarde correctamente en la base de datos y en
 
 ## Cambios Realizados en el Código
 
+### 1. Eliminado Logo Hardcodeado
+- ❌ **Eliminado:** `public/images/logo.png` (logo por defecto)
+- ✅ **Agregado al .gitignore:** Para evitar que se suba nuevamente
+- ✅ **Modificado:** `resources/views/layouts/app.blade.php` - Ahora usa el logo de la BD
+
+**Antes:**
+```blade
+@if($empresa && file_exists(public_path('images/logo.png')))
+    <img src="{{ asset('images/logo.png') }}" ...>
+@endif
+```
+
+**Ahora:**
+```blade
+@if($empresa && $empresa->logo)
+    <img src="{{ asset('storage/' . $empresa->logo) }}" ...>
+@endif
+```
+
+### 2. Mejorado Visualización en PDFs
 Se ha mejorado la forma en que se muestran los logos en las facturas PDF:
 
 1. **Antes:** Se usaba `storage_path()` que no funcionaba en PDFs
 2. **Ahora:** Se convierte el logo a Base64 para que funcione en cualquier contexto
 
 ### Archivos Modificados:
+- `resources/views/layouts/app.blade.php` (logo en sidebar)
 - `resources/views/facturas/pdf_electronica_optimizada.blade.php`
 - `resources/views/facturas/pdf_electronica.blade.php`
 - `resources/views/facturas_electronicas/pdf_tirilla.blade.php`
+- `.gitignore` (agregado logo hardcodeado)
 
 ## Notas Importantes
 
