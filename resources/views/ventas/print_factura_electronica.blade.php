@@ -367,18 +367,49 @@
 
         <!-- Tabla de Impuestos -->
         @php
-            // Cálculos correctos según estructura de factura electrónica
-            $totalBruto = $venta->total; // Total con IVA incluido
+            // ==========================================
+            // LEER IMPUESTOS YA CALCULADOS DESDE DETALLES
+            // ==========================================
+            
+            // Los detalles YA tienen el IVA calculado cuando se guardó la venta
+            $subtotalSinIVA = 0;  // Base gravable (subtotal sin IVA)
+            $totalIVA = 0;         // Total de IVA
+            $porcentajesIVA = []; // Array de porcentajes únicos
+            
+            foreach ($venta->detalles as $detalle) {
+                // Leer valores ya guardados en el detalle
+                $subtotalDetalle = $detalle->subtotal ?? 0;         // Base sin IVA
+                $valorIVADetalle = $detalle->valor_iva ?? 0;        // IVA del detalle
+                $porcentajeDetalle = $detalle->porcentaje_iva ?? 0; // % de IVA
+                
+                // Sumar totales
+                $subtotalSinIVA += $subtotalDetalle;
+                $totalIVA += $valorIVADetalle;
+                
+                // Guardar porcentaje si existe
+                if ($porcentajeDetalle > 0 && !in_array($porcentajeDetalle, $porcentajesIVA)) {
+                    $porcentajesIVA[] = $porcentajeDetalle;
+                }
+            }
+            
+            // Totales
             $descuentos = $venta->descuento ?? 0;
-            $subtotalDespuesDescuento = $totalBruto - $descuentos;
+            $totalBrutoConIVA = $subtotalSinIVA + $totalIVA; // Total antes de descuentos
             
-            $iva = $venta->impuesto ?? 0;
-            // Base gravable = subtotal / 1.19 (para sacar el IVA del 19%)
-            $baseGravable = $iva > 0 ? ($subtotalDespuesDescuento / 1.19) : $subtotalDespuesDescuento;
-            $ivaCalculado = $iva > 0 ? ($baseGravable * 0.19) : 0;
+            // Aplicar descuento proporcionalmente
+            if ($descuentos > 0) {
+                $factorDescuento = 1 - ($descuentos / $totalBrutoConIVA);
+                $subtotalSinIVA = $subtotalSinIVA * $factorDescuento;
+                $totalIVA = $totalIVA * $factorDescuento;
+            }
             
-            $totalNeto = $subtotalDespuesDescuento;
-            $totalAPagar = $subtotalDespuesDescuento;
+            $baseGravable = $subtotalSinIVA;
+            $ivaCalculado = $totalIVA;
+            $totalNeto = $subtotalSinIVA + $totalIVA; // Total después de descuentos
+            $totalAPagar = $totalNeto;
+            
+            // Porcentaje promedio (para mostrar)
+            $porcentajeIVAPromedio = count($porcentajesIVA) > 0 ? $porcentajesIVA[0] : 19;
         @endphp
         
         {{-- SIEMPRE mostrar tabla de impuestos, aunque sea 0 --}}
@@ -394,10 +425,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if($iva > 0)
+                    @if($ivaCalculado > 0)
                     <tr>
                         <td>IVA</td>
-                        <td>19.00</td>
+                        <td>{{ number_format($porcentajeIVAPromedio, 2, '.', '') }}%</td>
                         <td class="text-right">{{ number_format($baseGravable, 2, '.', ',') }}</td>
                         <td class="text-right">{{ number_format($ivaCalculado, 2, '.', ',') }}</td>
                     </tr>
@@ -416,7 +447,7 @@
         <div class="totals">
             <div class="row">
                 <span class="label">Total bruto:</span>
-                <span class="value">{{ number_format($totalBruto, 2, '.', ',') }}</span>
+                <span class="value">{{ number_format($totalBrutoConIVA, 2, '.', ',') }}</span>
             </div>
             <div class="row">
                 <span class="label">Descuentos:</span>
@@ -424,12 +455,14 @@
             </div>
             <div class="row">
                 <span class="label">Subtotal:</span>
-                <span class="value">{{ number_format($subtotalDespuesDescuento, 2, '.', ',') }}</span>
+                <span class="value">{{ number_format($baseGravable, 2, '.', ',') }}</span>
             </div>
+            @if($ivaCalculado > 0)
             <div class="row">
-                <span class="label">IVA 19%:</span>
+                <span class="label">IVA {{ number_format($porcentajeIVAPromedio, 2, '.', '') }}%:</span>
                 <span class="value">{{ number_format($ivaCalculado, 2, '.', ',') }}</span>
             </div>
+            @endif
             <div class="row">
                 <span class="label">Total neto:</span>
                 <span class="value">{{ number_format($totalNeto, 2, '.', ',') }}</span>
