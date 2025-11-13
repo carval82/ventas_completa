@@ -302,13 +302,13 @@
             @if(isset($empresa))
                 <h1>{{ strtoupper($empresa->nombre_comercial ?? $empresa->razon_social) }}</h1>
                 @if($empresa->nit)
-                    <p>NIT: {{ $empresa->nit }}</p>
+                    <p><strong>NIT: {{ $empresa->nit }}</strong></p>
                 @endif
                 @if($empresa->direccion)
-                    <p>{{ $empresa->direccion }}</p>
+                    <p>Dir: {{ $empresa->direccion }}</p>
                 @endif
                 @if($empresa->telefono)
-                    <p>Tel: {{ $empresa->telefono }}</p>
+                    <p>Propietario: tel {{ $empresa->telefono }}</p>
                 @endif
                 @if($empresa->email)
                     <p>{{ $empresa->email }}</p>
@@ -322,24 +322,16 @@
         <!-- Información de la Factura -->
         <div class="invoice-header">
             <h2>Factura electrónica de venta</h2>
-            <p>No: {{ $venta->getNumeroFacturaMostrar() }}</p>
+            <p><strong>No: {{ $venta->getNumeroFacturaMostrar() }}</strong></p>
             <p>Fecha generación: {{ $venta->fecha_venta->format('d/m/Y h:i A') }}</p>
-            @if($venta->fecha_vencimiento)
-                <p>Fecha vencimiento: {{ $venta->fecha_vencimiento->format('d/m/Y h:i A') }}</p>
-            @endif
+            <p>Fecha vencimiento: {{ $venta->fecha_vencimiento ? $venta->fecha_vencimiento->format('d/m/Y h:i A') : $venta->fecha_venta->addDays(30)->format('d/m/Y h:i A') }}</p>
         </div>
 
         <!-- Información del Cliente -->
         <div class="client-info">
-            <p><strong>Cliente:</strong> {{ $venta->cliente ? ($venta->cliente->nombres . ' ' . $venta->cliente->apellidos) : 'CLIENTE GENÉRICO' }}</p>
-            @if($venta->cliente && $venta->cliente->cedula)
-                <p><strong>C.C / NIT:</strong> {{ $venta->cliente->cedula }}</p>
-            @else
-                <p><strong>C.C / NIT:</strong> 222222222222</p>
-            @endif
-            @if($venta->cliente && $venta->cliente->direccion)
-                <p><strong>Dirección:</strong> {{ $venta->cliente->direccion }}</p>
-            @endif
+            <p><strong>Cliente:</strong> {{ $venta->cliente ? strtoupper($venta->cliente->nombres . ' ' . $venta->cliente->apellidos) : 'CONSUMIDOR FINAL' }}</p>
+            <p><strong>C.C / NIT:</strong> {{ $venta->cliente && $venta->cliente->cedula ? $venta->cliente->cedula : '222222222222' }}</p>
+            <p><strong>Dirección:</strong> {{ $venta->cliente && $venta->cliente->direccion ? $venta->cliente->direccion : 'N/A' }}</p>
         </div>
 
         <!-- Tabla de Productos -->
@@ -347,24 +339,26 @@
         <table class="products-table">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Cant.</th>
-                    <th class="text-left">Vr. Unit</th>
-                    <th class="text-right">Valor</th>
-                    <th>ID</th>
+                    <th style="width: 8%;">#</th>
+                    <th style="width: 12%;">Cant.</th>
+                    <th style="width: 20%;">Vr. Unit</th>
+                    <th style="width: 25%;" class="text-right">Valor</th>
+                    <th style="width: 10%;">ID</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($venta->detalles as $index => $detalle)
                 <tr>
-                    <td>{{ $index + 1 }}</td>
-                    <td>{{ number_format($detalle->cantidad, 2) }}</td>
-                    <td class="text-left">
-                        {{ $detalle->producto ? $detalle->producto->nombre : 'Producto' }}<br>
-                        <small>${{ number_format($detalle->precio, 2) }}</small>
+                    <td colspan="5" style="text-align: left; padding: 1mm; border-bottom: none;">
+                        <small><strong>{{ $detalle->producto ? $detalle->producto->nombre : 'Producto' }}</strong></small>
                     </td>
-                    <td class="text-right">${{ number_format($detalle->subtotal, 2) }}</td>
-                    <td><small>{{ $detalle->producto ? $detalle->producto->id : '-' }}</small></td>
+                </tr>
+                <tr style="border-top: none;">
+                    <td>{{ $index + 1 }}</td>
+                    <td>{{ number_format($detalle->cantidad, 2, '.', ',') }}</td>
+                    <td>{{ number_format($detalle->precio, 2, '.', ',') }}</td>
+                    <td class="text-right">{{ number_format($detalle->subtotal, 2, '.', ',') }}</td>
+                    <td>{{ $detalle->producto ? ($detalle->producto->codigo ?? 'A') : 'A' }}</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -373,11 +367,21 @@
 
         <!-- Tabla de Impuestos -->
         @php
+            // Cálculos correctos según estructura de factura electrónica
+            $totalBruto = $venta->total; // Total con IVA incluido
+            $descuentos = $venta->descuento ?? 0;
+            $subtotalDespuesDescuento = $totalBruto - $descuentos;
+            
             $iva = $venta->impuesto ?? 0;
-            $subtotal = $venta->total - $iva;
+            // Base gravable = subtotal / 1.19 (para sacar el IVA del 19%)
+            $baseGravable = $iva > 0 ? ($subtotalDespuesDescuento / 1.19) : $subtotalDespuesDescuento;
+            $ivaCalculado = $iva > 0 ? ($baseGravable * 0.19) : 0;
+            
+            $totalNeto = $subtotalDespuesDescuento;
+            $totalAPagar = $subtotalDespuesDescuento;
         @endphp
         
-        @if($iva > 0)
+        {{-- SIEMPRE mostrar tabla de impuestos, aunque sea 0 --}}
         <div class="tax-section">
             <h3>Impuestos</h3>
             <table class="tax-table">
@@ -390,42 +394,49 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @if($iva > 0)
                     <tr>
                         <td>IVA</td>
-                        <td>19%</td>
-                        <td class="text-right">${{ number_format($subtotal, 2) }}</td>
-                        <td class="text-right">${{ number_format($iva, 2) }}</td>
+                        <td>19.00</td>
+                        <td class="text-right">{{ number_format($baseGravable, 2, '.', ',') }}</td>
+                        <td class="text-right">{{ number_format($ivaCalculado, 2, '.', ',') }}</td>
                     </tr>
+                    @else
+                    <tr>
+                        <td colspan="4" style="text-align: center;">
+                            <small><em>No responsable de IVA</em></small>
+                        </td>
+                    </tr>
+                    @endif
                 </tbody>
             </table>
         </div>
-        @endif
 
         <!-- Totales -->
         <div class="totals">
             <div class="row">
-                <span class="label">Total Bruto:</span>
-                <span class="value">${{ number_format($venta->total, 2) }}</span>
+                <span class="label">Total bruto:</span>
+                <span class="value">{{ number_format($totalBruto, 2, '.', ',') }}</span>
             </div>
             <div class="row">
                 <span class="label">Descuentos:</span>
-                <span class="value">${{ number_format($venta->descuento ?? 0, 2) }}</span>
+                <span class="value">-{{ number_format($descuentos, 2, '.', ',') }}</span>
             </div>
             <div class="row">
                 <span class="label">Subtotal:</span>
-                <span class="value">${{ number_format($subtotal, 2) }}</span>
+                <span class="value">{{ number_format($subtotalDespuesDescuento, 2, '.', ',') }}</span>
             </div>
             <div class="row">
-                <span class="label">IVA:</span>
-                <span class="value">${{ number_format($iva, 2) }}</span>
+                <span class="label">IVA 19%:</span>
+                <span class="value">{{ number_format($ivaCalculado, 2, '.', ',') }}</span>
             </div>
             <div class="row">
                 <span class="label">Total neto:</span>
-                <span class="value">${{ number_format($venta->total, 2) }}</span>
+                <span class="value">{{ number_format($totalNeto, 2, '.', ',') }}</span>
             </div>
             <div class="row highlight">
                 <span class="label">Total a pagar:</span>
-                <span class="value">${{ number_format($venta->total, 2) }}</span>
+                <span class="value">{{ number_format($totalAPagar, 2, '.', ',') }}</span>
             </div>
         </div>
 
@@ -441,27 +452,35 @@
             </div>
             <div class="row">
                 <span>Total recibido:</span>
-                <span><strong>${{ number_format($venta->pago, 2) }}</strong></span>
+                <span><strong>{{ number_format($venta->pago, 2, '.', ',') }}</strong></span>
             </div>
             <div class="row">
                 <span>Cambio:</span>
-                <span><strong>${{ number_format($venta->devuelta, 2) }}</strong></span>
+                <span><strong>{{ number_format($venta->devuelta, 2, '.', ',') }}</strong></span>
             </div>
         </div>
 
         <!-- CUFE -->
-        @if($venta->cufe)
+        @if($venta->cufe || $venta->cufe_local)
         <div class="cufe-section">
-            <h3>CUFE</h3>
-            <div class="cufe-code">{{ $venta->cufe }}</div>
+            <h3>{{ $venta->cufe ? 'CUFE' : 'CUFE LOCAL' }}</h3>
+            <div class="cufe-code">{{ $venta->cufe ?? $venta->cufe_local }}</div>
         </div>
         @endif
 
         <!-- Código QR -->
-        @if($venta->qr_code && isset($venta->qr_code_image))
+        @if(($venta->qr_code && isset($venta->qr_code_image)) || $venta->qr_local)
         <div class="qr-section">
             <div class="qr-code">
-                {!! $venta->qr_code_image !!}
+                @if($venta->qr_code && isset($venta->qr_code_image))
+                    {{-- QR de Alegra (DIAN) --}}
+                    {!! $venta->qr_code_image !!}
+                @elseif($venta->qr_local)
+                    {{-- QR Local generado por el sistema --}}
+                    <img src="data:image/png;base64,{{ $venta->qr_local }}" 
+                         alt="QR Local" 
+                         style="width: 45mm; height: 45mm;">
+                @endif
             </div>
         </div>
         @endif
@@ -469,15 +488,17 @@
         <!-- Texto Legal -->
         <div class="legal-text">
             <p>
-                Al ser ésta</ una <strong>Factura Electrónica de Venta</strong>, no requiere firma autógrafa, 
-                se asimila en todos sus efectos a la Ley 527 de 1999, el Decreto Reglamentario 1929 de 2007, 
-                la resolución 14465 de 2007 de la DIAN y el Artículo 616-1 del Estatuto Tributario.
+                Al ser ésta una <strong>Factura Electrónica de Venta</strong> no requiere firma autógrafa 
+                y se asimila en todos sus efectos a lo regulado en la Ley 527 de 1999, el Decreto Reglamentario 1929 de 2007,  
+                la Resolución 000042 de 05 de mayo de 2020 de la DIAN por la cual se reglamenta el Sistema de Facturación Electrónica y 
+                el Artículo 616-1 del Estatuto Tributario.
             </p>
             <p style="margin-top: 2mm;">
-                <strong>Numeración Autorización</strong>: Resolución {{ $empresa->numero_resolucion ?? 'N/A' }} 
-                del {{ $empresa->fecha_resolucion ? $empresa->fecha_resolucion->format('d-m-Y') : 'N/A' }}. 
-                Prefijo {{ $empresa->prefijo_factura ?? 'FE' }} autorizado desde 
-                {{ $empresa->numeracion_desde ?? '1' }} hasta {{ $empresa->numeracion_hasta ?? '10000' }}.
+                <strong>Numeración Autorización</strong>: @if($empresa->numero_resolucion)Resolución {{ $empresa->numero_resolucion }} 
+                del {{ $empresa->fecha_resolucion ? $empresa->fecha_resolucion->format('d-m-Y') : 'N/A' }}. @endif
+                Prefijo <strong>{{ $empresa->prefijo_factura ?? 'FE' }}</strong> autorizado desde 
+                <strong>{{ $empresa->numeracion_desde ?? '1' }}</strong> hasta <strong>{{ $empresa->numeracion_hasta ?? '10000' }}</strong>. 
+                Modalidad: Factura Electrónica de Venta. Vigencia: Indefinida.
             </p>
         </div>
 

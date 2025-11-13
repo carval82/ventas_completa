@@ -65,8 +65,8 @@ class VentaController extends Controller
             ]);
         }
         
-        // Si es factura electrónica, usar el nuevo diseño
-        if ($venta->esFacturaElectronica()) {
+        // Si es factura electrónica O la empresa tiene activado el formato electrónico, usar el nuevo diseño
+        if ($venta->esFacturaElectronica() || ($empresa && $empresa->usar_formato_electronico)) {
             return view('ventas.print_factura_electronica', compact('venta', 'empresa'));
         }
         
@@ -124,8 +124,8 @@ class VentaController extends Controller
             $venta->qr_code_image = $qrImage;
         }
         
-        // Si es factura electrónica, usar el nuevo diseño
-        if ($venta->esFacturaElectronica()) {
+        // Si es factura electrónica O la empresa tiene activado el formato electrónico, usar el nuevo diseño
+        if ($venta->esFacturaElectronica() || ($empresa && $empresa->usar_formato_electronico)) {
             return view('ventas.print_factura_electronica', compact('venta', 'empresa'));
         }
         
@@ -146,8 +146,8 @@ class VentaController extends Controller
             $venta->qr_code_image = $qrImage;
         }
         
-        // Si es factura electrónica, usar el nuevo diseño
-        if ($venta->esFacturaElectronica()) {
+        // Si es factura electrónica O la empresa tiene activado el formato electrónico, usar el nuevo diseño
+        if ($venta->esFacturaElectronica() || ($empresa && $empresa->usar_formato_electronico)) {
             return view('ventas.print_factura_electronica', compact('venta', 'empresa'));
         }
         
@@ -170,8 +170,8 @@ class VentaController extends Controller
             $venta->qr_code_image = $qrImage;
         }
         
-        // Si es factura electrónica, usar el nuevo diseño
-        if ($venta->esFacturaElectronica()) {
+        // Si es factura electrónica O la empresa tiene activado el formato electrónico, usar el nuevo diseño
+        if ($venta->esFacturaElectronica() || ($empresa && $empresa->usar_formato_electronico)) {
             return view('ventas.print_factura_electronica', compact('venta', 'empresa'));
         }
         

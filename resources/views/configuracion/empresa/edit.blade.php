@@ -125,6 +125,31 @@ use Illuminate\Support\Str;
                                         </div>
                                     </div>
                                 </div>
+                                
+                                <!-- Usar Formato Electrónico para Todas las Facturas -->
+                                <div class="row mt-3">
+                                    <div class="col-md-12">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" 
+                                                   type="checkbox" 
+                                                   role="switch"
+                                                   id="usar_formato_electronico" 
+                                                   name="usar_formato_electronico" 
+                                                   value="1"
+                                                   {{ old('usar_formato_electronico', $empresa->usar_formato_electronico ?? false) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="usar_formato_electronico">
+                                                <i class="fas fa-file-invoice"></i> 
+                                                <strong>Usar formato profesional electrónico para TODAS las facturas</strong>
+                                            </label>
+                                            <small class="form-text text-muted d-block mt-1">
+                                                <i class="fas fa-info-circle"></i> 
+                                                Activa esta opción para que todas las ventas (electrónicas y normales) 
+                                                se impriman con el diseño profesional de factura electrónica que incluye: 
+                                                tabla de productos, desglose de impuestos, totales detallados, forma de pago, etc.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

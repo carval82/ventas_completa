@@ -17,6 +17,7 @@ class Empresa extends Model
         'sitio_web',
         'logo',
         'formato_impresion',
+        'usar_formato_electronico',
         'generar_qr_local',
         'regimen_tributario',
         'resolucion_facturacion',
@@ -35,7 +36,8 @@ class Empresa extends Model
         'fecha_vencimiento_resolucion' => 'date',
         'factura_electronica_habilitada' => 'boolean',
         'alegra_multiples_impuestos' => 'boolean',
-        'generar_qr_local' => 'boolean'
+        'generar_qr_local' => 'boolean',
+        'usar_formato_electronico' => 'boolean'
     ];
 
     protected $hidden = [
