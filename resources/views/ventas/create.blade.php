@@ -1271,8 +1271,10 @@
                             allowOutsideClick: false
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                // Abrir ventana de impresión
-                                const printUrl = response.print_url || `/ventas/print/${response.data.id}`;
+                                // Abrir ventana de impresión con URL absoluta
+                                const baseUrl = window.location.origin;
+                                const printUrl = response.print_url || `${baseUrl}/ventas/${response.data.id}/print`;
+                                console.log('URL de impresión:', printUrl);
                                 const printWindow = window.open(printUrl, '_blank');
                                 
                                 if (!printWindow) {
@@ -1596,8 +1598,10 @@ $('#btnConfirmarVenta').off('click').on('click', function() {
                     allowOutsideClick: false
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        // Abrir ventana de impresión
-                        const printUrl = response.print_url || `/ventas/print/${response.data.id}`;
+                        // Abrir ventana de impresión con URL absoluta
+                        const baseUrl = window.location.origin;
+                        const printUrl = response.print_url || `${baseUrl}/ventas/${response.data.id}/print`;
+                        console.log('URL de impresión:', printUrl);
                         const printWindow = window.open(printUrl, '_blank');
                         
                         if (!printWindow) {
