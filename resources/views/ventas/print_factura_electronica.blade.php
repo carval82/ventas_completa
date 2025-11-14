@@ -13,8 +13,8 @@
         
         body {
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 10px;
-            line-height: 1.3;
+            font-size: 11px;
+            line-height: 1.4;
             color: #000;
             background: #fff;
         }
@@ -41,15 +41,17 @@
         }
         
         .header h1 {
-            font-size: 13px;
+            font-size: 15px;
             font-weight: bold;
-            margin: 1mm 0;
+            margin: 1.5mm 0;
             text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
         
         .header p {
-            font-size: 9px;
-            margin: 0.5mm 0;
+            font-size: 10px;
+            margin: 0.8mm 0;
+            font-weight: 500;
         }
         
         /* Información de factura */
@@ -62,30 +64,37 @@
         }
         
         .invoice-header h2 {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: bold;
-            margin-bottom: 1mm;
+            margin-bottom: 1.5mm;
+            letter-spacing: 0.5px;
         }
         
         .invoice-header p {
-            font-size: 9px;
-            margin: 0.5mm 0;
+            font-size: 10px;
+            margin: 0.8mm 0;
+            font-weight: 500;
         }
         
         /* Información del cliente */
         .client-info {
             margin: 3mm 0;
-            font-size: 9px;
+            font-size: 11px;
+            background: #f9f9f9;
+            padding: 2mm;
+            border-radius: 1mm;
         }
         
         .client-info p {
-            margin: 1mm 0;
+            margin: 1.2mm 0;
+            line-height: 1.5;
         }
         
         .client-info strong {
             font-weight: bold;
             display: inline-block;
-            width: 20mm;
+            width: 22mm;
+            font-size: 11px;
         }
         
         /* Tabla de productos */
@@ -93,7 +102,7 @@
             width: 100%;
             margin: 3mm 0;
             border-collapse: collapse;
-            font-size: 9px;
+            font-size: 10px;
             table-layout: fixed;
         }
         
@@ -103,17 +112,19 @@
         }
         
         .products-table th {
-            padding: 1.5mm 0.5mm;
+            padding: 2mm 1mm;
             text-align: center;
             font-weight: bold;
-            font-size: 8px;
+            background: #e8e8e8;
+            font-size: 10px;
         }
         
         .products-table td {
-            padding: 1.5mm 0.5mm;
+            padding: 2mm 1mm;
             vertical-align: top;
             text-align: center;
             border-bottom: 1px dotted #ccc;
+            font-size: 10px;
         }
         
         .products-table td.text-left {
@@ -130,16 +141,18 @@
         }
         
         .tax-section h3 {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: bold;
             margin-bottom: 2mm;
             text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .tax-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 9px;
+            font-size: 10px;
             table-layout: fixed;
         }
         
@@ -148,15 +161,19 @@
         }
         
         .tax-table th {
-            padding: 1.5mm 1mm;
+            padding: 2mm 1mm;
             text-align: center;
             font-weight: bold;
+            background: #e8e8e8;
+            font-size: 10px;
         }
         
         .tax-table td {
-            padding: 1.5mm 1mm;
+            padding: 2mm 1mm;
             text-align: center;
             word-wrap: break-word;
+            font-size: 10px;
+            font-weight: 500;
         }
         
         .tax-table td.text-right {
@@ -166,8 +183,8 @@
         /* Totales */
         .totals {
             margin: 3mm 0;
-            font-size: 10px;
-            border-top: 1px dashed #333;
+            font-size: 11px;
+            border-top: 2px solid #333;
             padding: 2mm 1mm 0 1mm;
         }
         
@@ -180,11 +197,12 @@
         
         .totals .row.highlight {
             font-weight: bold;
-            font-size: 12px;
-            border-top: 1px solid #333;
-            border-bottom: 2px solid #333;
-            padding: 2mm 1mm;
+            font-size: 13px;
+            border-top: 2px solid #333;
+            border-bottom: 3px double #333;
+            padding: 2.5mm 1mm;
             margin: 2mm 0;
+            background: #f5f5f5;
         }
         
         .totals .label {
@@ -199,7 +217,7 @@
         /* Información de pago */
         .payment-info {
             margin: 3mm 0;
-            font-size: 10px;
+            font-size: 11px;
             border-top: 1px dashed #333;
             padding: 2mm 1mm 0 1mm;
         }
@@ -219,20 +237,25 @@
         }
         
         .cufe-section h3 {
-            font-size: 12px;
+            font-size: 14px;
             font-weight: bold;
             margin-bottom: 2mm;
             text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         
         .cufe-section .cufe-code {
-            font-size: 8px;
+            font-size: 9px;
             word-break: break-all;
             word-wrap: break-word;
             font-family: 'Courier New', monospace;
             text-align: justify;
-            line-height: 1.4;
-            padding: 0 2mm;
+            line-height: 1.5;
+            padding: 2mm;
+            background: #f9f9f9;
+            border-radius: 1mm;
+            font-weight: 500;
         }
         
         /* Código QR */
@@ -251,9 +274,9 @@
         
         /* Texto legal */
         .legal-text {
-            font-size: 8px;
+            font-size: 8.5px;
             text-align: justify;
-            line-height: 1.4;
+            line-height: 1.5;
             margin: 3mm 0;
             padding: 2mm 2mm;
             border-top: 1px dashed #333;
@@ -358,15 +381,15 @@
             <tbody>
                 @foreach($venta->detalles as $index => $detalle)
                 <tr>
-                    <td colspan="5" style="text-align: left; padding: 1mm; border-bottom: none;">
-                        <small><strong>{{ $detalle->producto ? $detalle->producto->nombre : 'Producto' }}</strong></small>
+                    <td colspan="5" style="text-align: left; padding: 2mm 1mm; border-bottom: none; font-size: 10px;">
+                        <strong>{{ $detalle->producto ? $detalle->producto->nombre : 'Producto' }}</strong>
                     </td>
                 </tr>
                 <tr style="border-top: none;">
-                    <td>{{ $index + 1 }}</td>
-                    <td>{{ number_format($detalle->cantidad, 2, '.', ',') }}</td>
+                    <td><strong>{{ $index + 1 }}</strong></td>
+                    <td><strong>{{ number_format($detalle->cantidad, 2, '.', ',') }}</strong></td>
                     <td>{{ number_format($detalle->precio, 2, '.', ',') }}</td>
-                    <td class="text-right">{{ number_format($detalle->subtotal, 2, '.', ',') }}</td>
+                    <td class="text-right"><strong>{{ number_format($detalle->subtotal, 2, '.', ',') }}</strong></td>
                     <td>{{ $detalle->producto ? ($detalle->producto->codigo ?? 'A') : 'A' }}</td>
                 </tr>
                 @endforeach
