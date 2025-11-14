@@ -21,8 +21,9 @@
         
         .ticket {
             width: 80mm;
+            max-width: 80mm;
             margin: 0 auto;
-            padding: 3mm;
+            padding: 2mm 3mm;
         }
         
         /* Encabezado */
@@ -61,7 +62,7 @@
         }
         
         .invoice-header h2 {
-            font-size: 11px;
+            font-size: 13px;
             font-weight: bold;
             margin-bottom: 1mm;
         }
@@ -92,7 +93,8 @@
             width: 100%;
             margin: 3mm 0;
             border-collapse: collapse;
-            font-size: 8px;
+            font-size: 9px;
+            table-layout: fixed;
         }
         
         .products-table thead {
@@ -128,15 +130,17 @@
         }
         
         .tax-section h3 {
-            font-size: 9px;
+            font-size: 12px;
             font-weight: bold;
-            margin-bottom: 1mm;
+            margin-bottom: 2mm;
+            text-align: center;
         }
         
         .tax-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 8px;
+            font-size: 9px;
+            table-layout: fixed;
         }
         
         .tax-table thead {
@@ -144,14 +148,15 @@
         }
         
         .tax-table th {
-            padding: 1mm 0.5mm;
+            padding: 1.5mm 1mm;
             text-align: center;
             font-weight: bold;
         }
         
         .tax-table td {
-            padding: 1mm 0.5mm;
+            padding: 1.5mm 1mm;
             text-align: center;
+            word-wrap: break-word;
         }
         
         .tax-table td.text-right {
@@ -161,23 +166,24 @@
         /* Totales */
         .totals {
             margin: 3mm 0;
-            font-size: 9px;
+            font-size: 10px;
             border-top: 1px dashed #333;
-            padding-top: 2mm;
+            padding: 2mm 1mm 0 1mm;
         }
         
         .totals .row {
             display: flex;
             justify-content: space-between;
-            margin: 1mm 0;
+            margin: 1.5mm 0;
+            padding: 0 1mm;
         }
         
         .totals .row.highlight {
             font-weight: bold;
-            font-size: 11px;
+            font-size: 12px;
             border-top: 1px solid #333;
             border-bottom: 2px solid #333;
-            padding: 2mm 0;
+            padding: 2mm 1mm;
             margin: 2mm 0;
         }
         
@@ -193,15 +199,16 @@
         /* Información de pago */
         .payment-info {
             margin: 3mm 0;
-            font-size: 9px;
+            font-size: 10px;
             border-top: 1px dashed #333;
-            padding-top: 2mm;
+            padding: 2mm 1mm 0 1mm;
         }
         
         .payment-info .row {
             display: flex;
             justify-content: space-between;
-            margin: 1mm 0;
+            margin: 1.5mm 0;
+            padding: 0 1mm;
         }
         
         /* CUFE */
@@ -212,18 +219,20 @@
         }
         
         .cufe-section h3 {
-            font-size: 9px;
+            font-size: 12px;
             font-weight: bold;
-            margin-bottom: 1mm;
+            margin-bottom: 2mm;
             text-align: center;
         }
         
         .cufe-section .cufe-code {
-            font-size: 7px;
+            font-size: 8px;
             word-break: break-all;
+            word-wrap: break-word;
             font-family: 'Courier New', monospace;
             text-align: justify;
-            line-height: 1.2;
+            line-height: 1.4;
+            padding: 0 2mm;
         }
         
         /* Código QR */
@@ -242,11 +251,11 @@
         
         /* Texto legal */
         .legal-text {
-            font-size: 7px;
+            font-size: 8px;
             text-align: justify;
-            line-height: 1.3;
+            line-height: 1.4;
             margin: 3mm 0;
-            padding: 2mm 0;
+            padding: 2mm 2mm;
             border-top: 1px dashed #333;
         }
         
@@ -368,47 +377,68 @@
         <!-- Tabla de Impuestos -->
         @php
             // ==========================================
-            // LEER IMPUESTOS YA CALCULADOS DESDE DETALLES
+            // CÁLCULO INTELIGENTE DE IMPUESTOS
             // ==========================================
             
-            // Los detalles YA tienen el IVA calculado cuando se guardó la venta
-            $subtotalSinIVA = 0;  // Base gravable (subtotal sin IVA)
-            $totalIVA = 0;         // Total de IVA
-            $porcentajesIVA = []; // Array de porcentajes únicos
+            $subtotalSinIVA = 0;
+            $totalIVA = 0;
+            $porcentajesIVA = [];
             
+            // ESTRATEGIA 1: Leer de detalles si tienen IVA guardado
             foreach ($venta->detalles as $detalle) {
-                // Leer valores ya guardados en el detalle
-                $subtotalDetalle = $detalle->subtotal ?? 0;         // Base sin IVA
-                $valorIVADetalle = $detalle->valor_iva ?? 0;        // IVA del detalle
-                $porcentajeDetalle = $detalle->porcentaje_iva ?? 0; // % de IVA
+                $subtotalDetalle = $detalle->subtotal ?? 0;
+                $valorIVADetalle = $detalle->valor_iva ?? 0;
+                $porcentajeDetalle = $detalle->porcentaje_iva ?? 0;
                 
-                // Sumar totales
                 $subtotalSinIVA += $subtotalDetalle;
                 $totalIVA += $valorIVADetalle;
                 
-                // Guardar porcentaje si existe
                 if ($porcentajeDetalle > 0 && !in_array($porcentajeDetalle, $porcentajesIVA)) {
                     $porcentajesIVA[] = $porcentajeDetalle;
                 }
             }
             
-            // Totales
-            $descuentos = $venta->descuento ?? 0;
-            $totalBrutoConIVA = $subtotalSinIVA + $totalIVA; // Total antes de descuentos
+            // ESTRATEGIA 2: Si no hay IVA en detalles, calcular desde el total
+            $esResponsableIVA = isset($empresa) && $empresa->regimen_tributario === 'responsable_iva';
             
-            // Aplicar descuento proporcionalmente
-            if ($descuentos > 0) {
-                $factorDescuento = 1 - ($descuentos / $totalBrutoConIVA);
-                $subtotalSinIVA = $subtotalSinIVA * $factorDescuento;
-                $totalIVA = $totalIVA * $factorDescuento;
+            if ($totalIVA == 0 && $esResponsableIVA) {
+                // Calcular IVA asumiendo que está incluido en el precio (19%)
+                $totalConIVA = $venta->total;
+                $descuentos = $venta->descuento ?? 0;
+                $subtotalSinDescuento = $totalConIVA + $descuentos;
+                
+                // Extraer IVA del total (precio incluye IVA 19%)
+                $baseGravable = $subtotalSinDescuento / 1.19;
+                $ivaCalculado = $subtotalSinDescuento - $baseGravable;
+                
+                // Aplicar descuento
+                if ($descuentos > 0) {
+                    $factorDescuento = $totalConIVA / $subtotalSinDescuento;
+                    $baseGravable = $baseGravable * $factorDescuento;
+                    $ivaCalculado = $ivaCalculado * $factorDescuento;
+                }
+                
+                $subtotalSinIVA = $baseGravable;
+                $totalIVA = $ivaCalculado;
+                $porcentajesIVA = [19];
+            } else {
+                // Usar valores calculados de detalles
+                $descuentos = $venta->descuento ?? 0;
+                $totalBrutoConIVA = $subtotalSinIVA + $totalIVA;
+                
+                if ($descuentos > 0 && $totalBrutoConIVA > 0) {
+                    $factorDescuento = 1 - ($descuentos / $totalBrutoConIVA);
+                    $subtotalSinIVA = $subtotalSinIVA * $factorDescuento;
+                    $totalIVA = $totalIVA * $factorDescuento;
+                }
+                
+                $baseGravable = $subtotalSinIVA;
+                $ivaCalculado = $totalIVA;
             }
             
-            $baseGravable = $subtotalSinIVA;
-            $ivaCalculado = $totalIVA;
-            $totalNeto = $subtotalSinIVA + $totalIVA; // Total después de descuentos
+            $totalNeto = $subtotalSinIVA + $totalIVA;
             $totalAPagar = $totalNeto;
-            
-            // Porcentaje promedio (para mostrar)
+            $totalBrutoConIVA = $subtotalSinIVA + $totalIVA + ($venta->descuento ?? 0);
             $porcentajeIVAPromedio = count($porcentajesIVA) > 0 ? $porcentajesIVA[0] : 19;
         @endphp
         
