@@ -1208,11 +1208,11 @@
                                 
                                 // Refrescar el formulario para crear otra venta
                                 setTimeout(() => {
-                                    window.location.href = '/ventas/create-iva';
+                                    window.location.href = '{{ route('ventas.create') }}';
                                 }, 500);
                             } else {
                                 // Refrescar para crear nueva venta
-                                window.location.href = '/ventas/create-iva';
+                                window.location.href = '{{ route('ventas.create') }}';
                             }
                         });
                     } catch (e) {
@@ -1543,11 +1543,11 @@ $('#btnConfirmarVenta').off('click').on('click', function() {
                         
                         // Refrescar el formulario para crear otra venta
                         setTimeout(() => {
-                            window.location.href = '/ventas/create-iva';
+                            window.location.href = '{{ route('ventas.create') }}';
                         }, 500);
                     } else {
                         // Refrescar para crear nueva venta
-                        window.location.href = '/ventas/create-iva';
+                        window.location.href = '{{ route('ventas.create') }}';
                     }
                 });
             } catch (e) {
