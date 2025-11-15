@@ -311,7 +311,7 @@
                         <!-- Fallback: intentar con base64 -->
                         <img src="data:image/png;base64,{{ $venta->qr_code }}" alt="Código QR" style="width: 30mm; height: 30mm;">
                     @elseif(isset($detallesAlegra['stamp']['barCodeContent']))
-                        <!-- Fallback: usar QR de Alegra -->
+                        <!-- Fallback: usar QR de Alegra si viene como base64 -->
                         <img src="data:image/png;base64,{{ $detallesAlegra['stamp']['barCodeContent'] }}" alt="Código QR" style="width: 30mm; height: 30mm;">
                     @else
                         <!-- Mostrar texto indicativo si no hay QR disponible -->

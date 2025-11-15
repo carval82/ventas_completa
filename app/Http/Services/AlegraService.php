@@ -1475,6 +1475,7 @@ class AlegraService
     
     /**
      * Obtener detalles completos de una factura para generación de PDF
+     * y extraer CUFE/QR de la misma forma que el flujo automático espera.
      */
     public function obtenerDetalleFacturaCompleto($facturaId)
     {
@@ -1485,23 +1486,72 @@ class AlegraService
 
             $response = $this->http->get("/invoices/{$facturaId}");
             
+            $statusCode = $response->status();
+            $data = $response->json();
+
             Log::info('Respuesta detalles completos factura', [
-                'status' => $response->status(),
-                'body_sample' => substr(json_encode($response->json()), 0, 500) . '...'
+                'status' => $statusCode,
+                'body_sample' => substr(json_encode($data), 0, 500) . '...'
             ]);
 
             if ($response->successful()) {
-                $data = $response->json();
-                
+                $cufe = null;
+                $qrCode = null;
+                $pdfUrl = null;
+
+                // 1) Buscar en metadata si existe
+                if (isset($data['metadata']) && is_array($data['metadata'])) {
+                    foreach ($data['metadata'] as $metadata) {
+                        if (isset($metadata['key']) && $metadata['key'] === 'cufe') {
+                            $cufe = $metadata['value'];
+                        }
+                        if (isset($metadata['key']) && in_array($metadata['key'], ['qrCode', 'qr_data'])) {
+                            $qrCode = $metadata['value'];
+                        }
+                    }
+                }
+
+                // 2) Buscar en dianStatus si está disponible allí
+                if (isset($data['dianStatus']) && is_array($data['dianStatus'])) {
+                    if (empty($cufe) && !empty($data['dianStatus']['cufe'])) {
+                        $cufe = $data['dianStatus']['cufe'];
+                    }
+                    if (empty($qrCode) && !empty($data['dianStatus']['qrCode'])) {
+                        $qrCode = $data['dianStatus']['qrCode'];
+                    }
+                }
+
+                // 3) Tomar directamente del stamp (lo que ya usa la tirilla)
+                if (isset($data['stamp']) && is_array($data['stamp'])) {
+                    if (empty($cufe) && !empty($data['stamp']['cufe'])) {
+                        $cufe = $data['stamp']['cufe'];
+                    }
+                    if (empty($qrCode) && !empty($data['stamp']['barCodeContent'])) {
+                        $qrCode = $data['stamp']['barCodeContent'];
+                    }
+                }
+
+                // 4) Buscar PDF en adjuntos (por si se necesita para descarga)
+                if (isset($data['attachments']) && is_array($data['attachments'])) {
+                    foreach ($data['attachments'] as $attachment) {
+                        if (isset($attachment['name']) && strpos($attachment['name'], '.pdf') !== false) {
+                            $pdfUrl = $attachment['downloadLink'];
+                        }
+                    }
+                }
+
                 return [
                     'success' => true,
-                    'data' => $data  // Retornar todos los datos para el PDF
+                    'data' => $data,   // Todos los datos para PDF/tirilla
+                    'cufe' => $cufe,   // CUFE resumido para guardarlo en Venta
+                    'qrCode' => $qrCode, // Cadena que genera el QR DIAN
+                    'pdfUrl' => $pdfUrl
                 ];
             }
 
             return [
                 'success' => false,
-                'error' => $response->json()['message'] ?? 'Error al obtener detalles de factura'
+                'error' => $data['message'] ?? 'Error al obtener detalles de factura'
             ];
         } catch (\Exception $e) {
             Log::error('Error al obtener detalles completos de factura', [

@@ -1005,12 +1005,116 @@ class VentaController extends Controller
                     }
                 }
 
+                // Intentar enviar automáticamente la factura a la DIAN para obtener CUFE y QR definitivos
+                try {
+                    Log::info('Enviando factura electrónica a la DIAN automáticamente', [
+                        'venta_id' => $venta->id,
+                        'alegra_id' => $venta->alegra_id
+                    ]);
+
+                    $resultadoDian = $alegraService->enviarFacturaADian($venta->alegra_id);
+
+                    if ($resultadoDian['success']) {
+                        $datosDian = $resultadoDian['data'] ?? [];
+
+                        $venta->update([
+                            'estado_dian' => $datosDian['status'] ?? $venta->estado_dian,
+                            'cufe' => $datosDian['cufe'] ?? $venta->cufe,
+                            'qr_code' => $datosDian['qrCode'] ?? $venta->qr_code,
+                        ]);
+
+                        Log::info('Factura electrónica enviada a DIAN correctamente desde generarFacturaElectronica', [
+                            'venta_id' => $venta->id,
+                            'estado_dian' => $venta->estado_dian,
+                            'cufe_present' => !empty($venta->cufe),
+                            'qr_present' => !empty($venta->qr_code)
+                        ]);
+
+                        // Intentar varias veces obtener CUFE/QR desde Alegra antes de responder al frontend
+                        if (empty($venta->cufe) || empty($venta->qr_code)) {
+                            Log::info('CUFE/QR no presentes tras envío a DIAN, iniciando polling de detalles completos de factura', [
+                                'venta_id' => $venta->id,
+                                'alegra_id' => $venta->alegra_id
+                            ]);
+
+                            $intentosMaximos = 6; // 6 intentos
+                            $esperaSegundos = 5; // 5 segundos entre intentos (30s máx)
+
+                            for ($intento = 1; $intento <= $intentosMaximos; $intento++) {
+                                Log::info('Intento de actualización de datos DIAN', [
+                                    'venta_id' => $venta->id,
+                                    'alegra_id' => $venta->alegra_id,
+                                    'intento' => $intento
+                                ]);
+
+                                $detallesCompleto = $alegraService->obtenerDetalleFacturaCompleto($venta->alegra_id);
+
+                                if ($detallesCompleto['success']) {
+                                    $cufeFinal = $detallesCompleto['cufe'] ?? null;
+                                    $qrFinal = $detallesCompleto['qrCode'] ?? null;
+
+                                    if ($cufeFinal || $qrFinal) {
+                                        $venta->update([
+                                            'cufe' => $cufeFinal ?: $venta->cufe,
+                                            'qr_code' => $qrFinal ?: $venta->qr_code,
+                                        ]);
+
+                                        Log::info('CUFE/QR actualizados desde obtenerDetalleFacturaCompleto durante polling', [
+                                            'venta_id' => $venta->id,
+                                            'intento' => $intento,
+                                            'cufe_present' => !empty($venta->cufe),
+                                            'qr_present' => !empty($venta->qr_code)
+                                        ]);
+                                        // En cuanto tengamos datos, salimos del bucle
+                                        break;
+                                    } else {
+                                        Log::info('obtenerDetalleFacturaCompleto aún no devuelve CUFE/QR, reintentando si hay intentos restantes', [
+                                            'venta_id' => $venta->id,
+                                            'alegra_id' => $venta->alegra_id,
+                                            'intento' => $intento
+                                        ]);
+                                    }
+                                } else {
+                                    Log::warning('Error al obtener detalles completos de factura durante polling', [
+                                        'venta_id' => $venta->id,
+                                        'alegra_id' => $venta->alegra_id,
+                                        'intento' => $intento,
+                                        'error' => $detallesCompleto['error'] ?? 'Error desconocido'
+                                    ]);
+                                }
+
+                                // Si no es el último intento, esperar antes de volver a intentar
+                                if ($intento < $intentosMaximos) {
+                                    sleep($esperaSegundos);
+                                }
+                            }
+                        }
+                    } else {
+                        Log::warning('No se pudo enviar automáticamente la factura a DIAN', [
+                            'venta_id' => $venta->id,
+                            'alegra_id' => $venta->alegra_id,
+                            'message' => $resultadoDian['message'] ?? 'Error desconocido'
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Excepción al intentar enviar factura a DIAN automáticamente', [
+                        'venta_id' => $venta->id,
+                        'alegra_id' => $venta->alegra_id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+
                 return response()->json([
                     'success' => true,
                     'fe_success' => true,
                     'message' => 'Venta y factura electrónica creadas correctamente',
                     'data' => $venta,
-                    'print_url' => route('ventas.print', $venta->id),
+                    // URLs para distintas formas de impresión
+                    'html_url' => route('facturas.electronicas.imprimir', $venta->id),
+                    'pdf_url' => route('facturas.electronicas.descargar-pdf', $venta->id),
+                    'tirilla_url' => route('facturas.electronicas.imprimir-tirilla', $venta->id),
+                    // print_url se mantiene por compatibilidad (apunta al HTML)
+                    'print_url' => route('facturas.electronicas.imprimir', $venta->id),
                     'redirect_url' => route('ventas.create'),
                     'show_url' => route('ventas.show', $venta->id)
                 ]);

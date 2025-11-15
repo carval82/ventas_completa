@@ -8,17 +8,27 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5>Factura Electrónica #{{ $venta->numero }}</h5>
+                    <h5>Factura Electrónica #{{ $venta->numero_factura_alegra ?? $venta->numero }}</h5>
                     <div>
                         @if (!empty($detalles['pdf_url']))
-                            <a href="{{ $detalles['pdf_url'] }}" target="_blank" class="btn btn-sm btn-primary">
-                                <i class="fas fa-file-pdf"></i> Ver PDF Original
+                            <a href="{{ $detalles['pdf_url'] }}" target="_blank" class="btn btn-sm btn-primary mr-1">
+                                <i class="fas fa-file-pdf"></i> Ver PDF Original Alegra
                             </a>
                         @endif
-                        <button onclick="window.print();" class="btn btn-sm btn-success">
-                            <i class="fas fa-print"></i> Imprimir
+
+                        <a href="{{ route('facturas.electronicas.descargar-pdf', $venta->id) }}" target="_blank" class="btn btn-sm btn-success mr-1">
+                            <i class="fas fa-file-alt"></i> Carta (PDF propio)
+                        </a>
+
+                        <a href="{{ route('facturas.electronicas.imprimir-tirilla', $venta->id) }}" target="_blank" class="btn btn-sm btn-info mr-1">
+                            <i class="fas fa-receipt"></i> Tirilla (PDF)
+                        </a>
+
+                        <button type="button" onclick="window.print();" class="btn btn-sm btn-outline-secondary mr-1">
+                            <i class="fas fa-print"></i> Imprimir HTML
                         </button>
-                        <a href="{{ route('facturas_electronicas.show', $venta->id) }}" class="btn btn-sm btn-secondary">
+
+                        <a href="{{ route('facturas.electronicas.show', $venta->id) }}" class="btn btn-sm btn-secondary">
                             <i class="fas fa-arrow-left"></i> Volver
                         </a>
                     </div>
@@ -46,9 +56,9 @@
                         <div class="col-md-6 text-right">
                             <h4>Factura Electrónica</h4>
                             <p>
-                                <strong>Número:</strong> {{ $detalles['factura']['numberTemplate']['prefix'] ?? '' }}{{ $detalles['factura']['number'] ?? $venta->numero }}<br>
-                                <strong>Fecha:</strong> {{ \Carbon\Carbon::parse($venta->fecha)->format('d/m/Y') }}<br>
-                                <strong>Estado DIAN:</strong> {{ $detalles['dian_status'] ?? 'Pendiente' }}
+                                <strong>Número:</strong> {{ $venta->numero_factura_alegra ?? $venta->numero }}<br>
+                                <strong>Fecha:</strong> {{ \Carbon\Carbon::parse($venta->fecha_venta ?? $venta->fecha)->format('d/m/Y') }}<br>
+                                <strong>Estado DIAN:</strong> {{ $venta->estado_dian ?? 'Pendiente' }}
                             </p>
                         </div>
                     </div>
@@ -132,18 +142,37 @@
                     </div>
 
                     <!-- CUFE y Datos Adicionales -->
-                    @if(isset($detalles['factura']['metadata']))
                     <div class="row mb-4">
                         <div class="col-md-12">
-                            <h5>Información Adicional</h5>
-                            @foreach($detalles['factura']['metadata'] as $metadata)
-                                @if($metadata['key'] == 'cufe' || $metadata['key'] == 'qr_data')
-                                    <p><strong>{{ strtoupper($metadata['key']) }}:</strong> {{ $metadata['value'] }}</p>
+                            <h5>Información DIAN</h5>
+                            <p>
+                                <strong>CUFE:</strong>
+                                @if($venta->cufe)
+                                    {{ $venta->cufe }}
+                                @elseif($venta->estado_dian === 'sent' || $venta->estado_dian === 'issued' || $venta->estado_dian === 'accepted')
+                                    Factura enviada a DIAN. El CUFE aún está en proceso de generación. Puede tardar unos minutos en estar disponible.
+                                @else
+                                    Aún no se ha enviado la factura a la DIAN o está en proceso inicial.
                                 @endif
-                            @endforeach
+                            </p>
+                            @if($venta->qr_code || (isset($detalles['stamp']['barCodeContent']) && $detalles['stamp']['barCodeContent']))
+                                <div class="mt-2">
+                                    <strong>Código QR:</strong>
+                                    <div class="mt-2">
+                                        @if($venta->qr_code)
+                                            <img src="data:image/png;base64,{{ $venta->qr_code }}" alt="QR DIAN" style="max-width: 150px;">
+                                        @elseif(isset($detalles['stamp']['barCodeContent']))
+                                            @php
+                                                $qrData = $detalles['stamp']['barCodeContent'];
+                                                $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' . urlencode($qrData);
+                                            @endphp
+                                            <img src="{{ $qrUrl }}" alt="QR DIAN" style="max-width: 150px;">
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     </div>
-                    @endif
 
                     <!-- Notas y Observaciones -->
                     <div class="row">

@@ -724,15 +724,25 @@ class AlegraService
                 $qrCode = null;
                 $pdfUrl = null;
                 
-                // Buscar el CUFE en los metadatos
+                // Buscar el CUFE/QR en los metadatos
                 if (isset($data['metadata']) && is_array($data['metadata'])) {
                     foreach ($data['metadata'] as $metadata) {
                         if (isset($metadata['key']) && $metadata['key'] === 'cufe') {
                             $cufe = $metadata['value'];
                         }
-                        if (isset($metadata['key']) && $metadata['key'] === 'qrCode') {
+                        if (isset($metadata['key']) && in_array($metadata['key'], ['qrCode', 'qr_data'])) {
                             $qrCode = $metadata['value'];
                         }
+                    }
+                }
+
+                // Si no se encontró en metadata, intentar obtenerlo desde dianStatus (cuando Alegra lo expone allí)
+                if (isset($data['dianStatus']) && is_array($data['dianStatus'])) {
+                    if (empty($cufe) && !empty($data['dianStatus']['cufe'])) {
+                        $cufe = $data['dianStatus']['cufe'];
+                    }
+                    if (empty($qrCode) && !empty($data['dianStatus']['qrCode'])) {
+                        $qrCode = $data['dianStatus']['qrCode'];
                     }
                 }
                 
@@ -797,9 +807,10 @@ class AlegraService
             $token = $credenciales['token'];
             
             // Realizar la solicitud para obtener los detalles de la factura
+            // Importante: incluir dianStatus para intentar obtener CUFE/QR oficiales
             $response = Http::withBasicAuth($email, $token)
                 ->get("https://api.alegra.com/api/v1/invoices/{$idFactura}", [
-                    'expand' => 'items,client,payments,attachments,observations,metadata'
+                    'expand' => 'items,client,payments,attachments,observations,metadata,dianStatus'
                 ]);
             
             $data = $response->json();
@@ -816,23 +827,43 @@ class AlegraService
             ]);
             
             if ($statusCode >= 200 && $statusCode < 300) {
-                // Extraer informaciÃ³n del CUFE si existe
+                // Extraer información del CUFE si existe
                 $cufe = null;
                 $qrCode = null;
                 $pdfUrl = null;
-                
-                // Buscar el CUFE en los metadatos
+
+                // 1) Buscar el CUFE/QR en los metadatos
                 if (isset($data['metadata']) && is_array($data['metadata'])) {
                     foreach ($data['metadata'] as $metadata) {
                         if (isset($metadata['key']) && $metadata['key'] === 'cufe') {
                             $cufe = $metadata['value'];
                         }
-                        if (isset($metadata['key']) && $metadata['key'] === 'qrCode') {
+                        if (isset($metadata['key']) && in_array($metadata['key'], ['qrCode', 'qr_data'])) {
                             $qrCode = $metadata['value'];
                         }
                     }
                 }
-                
+
+                // 2) Si no se encontró en metadata, intentar obtenerlo desde dianStatus
+                if (isset($data['dianStatus']) && is_array($data['dianStatus'])) {
+                    if (empty($cufe) && !empty($data['dianStatus']['cufe'])) {
+                        $cufe = $data['dianStatus']['cufe'];
+                    }
+                    if (empty($qrCode) && !empty($data['dianStatus']['qrCode'])) {
+                        $qrCode = $data['dianStatus']['qrCode'];
+                    }
+                }
+
+                // 3) Si sigue sin encontrarse, tomarlo directamente del stamp (lo que ya usa la tirilla)
+                if (isset($data['stamp']) && is_array($data['stamp'])) {
+                    if (empty($cufe) && !empty($data['stamp']['cufe'])) {
+                        $cufe = $data['stamp']['cufe'];
+                    }
+                    if (empty($qrCode) && !empty($data['stamp']['barCodeContent'])) {
+                        $qrCode = $data['stamp']['barCodeContent'];
+                    }
+                }
+
                 // Buscar el PDF en los adjuntos
                 if (isset($data['attachments']) && is_array($data['attachments'])) {
                     foreach ($data['attachments'] as $attachment) {
@@ -841,7 +872,7 @@ class AlegraService
                         }
                     }
                 }
-                
+
                 return [
                     'success' => true,
                     'data' => $data,

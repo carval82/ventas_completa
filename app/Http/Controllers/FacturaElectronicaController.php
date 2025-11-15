@@ -117,17 +117,17 @@ class FacturaElectronicaController extends Controller
                 ->with('error', 'Esta venta no tiene una factura electrónica asociada');
         }
         
-        // Obtener detalles de la factura emitida en Alegra
-        $detalles = $this->alegraService->obtenerDetallesFacturaEmitida($venta->alegra_id);
+        // Obtener detalles completos de la factura desde Alegra
+        $detallesAlegra = $this->alegraService->obtenerDetalleFacturaCompleto($venta->alegra_id);
         
-        if (!$detalles['success']) {
+        if (!$detallesAlegra['success']) {
             return redirect()->route('facturas_electronicas.show', $venta->id)
-                ->with('error', 'Error al obtener detalles de la factura: ' . $detalles['message']);
+                ->with('error', 'Error al obtener detalles de la factura: ' . ($detallesAlegra['error'] ?? 'Error desconocido'));
         }
         
         return view('facturas_electronicas.imprimir', [
             'venta' => $venta,
-            'detalles' => $detalles['data']
+            'detalles' => $detallesAlegra['data']
         ]);
     }
     
@@ -167,10 +167,40 @@ class FacturaElectronicaController extends Controller
         $numeroFactura = $venta->getNumeroFacturaMostrar();
         $nombreArchivo = 'factura_electronica_' . $numeroFactura . '.pdf';
         
-        // Generar QR code si existe la información
+        // Generar QR code si existe la información, usando el mismo servicio que la tirilla
         $qrCodeBase64 = null;
         if (isset($detallesAlegra['data']['stamp']['barCodeContent'])) {
-            $qrCodeBase64 = $this->generarQRCode($detallesAlegra['data']['stamp']['barCodeContent']);
+            try {
+                $qrData = $detallesAlegra['data']['stamp']['barCodeContent'];
+
+                Log::info('Generando QR de DIAN para PDF carta desde barCodeContent', [
+                    'venta_id' => $venta->id,
+                    'alegra_id' => $venta->alegra_id,
+                    'data_length' => strlen($qrData)
+                ]);
+
+                $qrService = new \App\Services\QRLocalService();
+                $qrCodeBase64 = $qrService->generarQRCode($qrData);
+
+                if ($qrCodeBase64) {
+                    Log::info('QR DIAN generado para PDF carta', [
+                        'venta_id' => $venta->id,
+                        'alegra_id' => $venta->alegra_id,
+                        'base64_length' => strlen($qrCodeBase64)
+                    ]);
+                } else {
+                    Log::warning('No se pudo generar QR DIAN para PDF carta a partir de barCodeContent', [
+                        'venta_id' => $venta->id,
+                        'alegra_id' => $venta->alegra_id
+                    ]);
+                }
+            } catch (\Exception $e) {
+                Log::error('Error generando QR DIAN para PDF carta', [
+                    'venta_id' => $venta->id,
+                    'alegra_id' => $venta->alegra_id,
+                    'error' => $e->getMessage()
+                ]);
+            }
         }
         
         // Crear vista HTML para el PDF usando la vista optimizada
@@ -480,8 +510,8 @@ class FacturaElectronicaController extends Controller
         // Procesar QR Code y guardarlo como archivo temporal para DomPDF
         $qrImagePath = null;
         
+        // Si ya tenemos qr_code en la venta (base64 PNG), usarlo
         if ($venta->qr_code) {
-            // Decodificar base64 y guardar temporalmente
             $qrImagePath = storage_path('app/temp/qr_' . $venta->id . '.png');
             
             // Crear directorio temp si no existe
@@ -492,7 +522,7 @@ class FacturaElectronicaController extends Controller
             // Guardar imagen decodificada
             file_put_contents($qrImagePath, base64_decode($venta->qr_code));
             
-            Log::info('QR guardado temporalmente', [
+            Log::info('QR guardado temporalmente desde venta->qr_code', [
                 'path' => $qrImagePath,
                 'exists' => file_exists($qrImagePath),
                 'size' => file_exists($qrImagePath) ? filesize($qrImagePath) : 0

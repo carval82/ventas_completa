@@ -120,6 +120,14 @@ use Illuminate\Support\Str;
                                             <span class="badge bg-warning">No Habilitada</span>
                                         @endif
                                     </dd>
+                                    <dt class="col-sm-3">QR/CUFE Local:</dt>
+                                    <dd class="col-sm-9">
+                                        @if($empresa->generar_qr_local)
+                                            <span class="badge bg-success">Activado</span>
+                                        @else
+                                            <span class="badge bg-secondary">Desactivado</span>
+                                        @endif
+                                    </dd>
                                 </dl>
                             </div>
                         </div>

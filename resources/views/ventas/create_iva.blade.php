@@ -1146,13 +1146,27 @@
 
             // Cerrar modal y enviar
             $('#confirmacionModal').modal('hide');
-            
+
+            // Mostrar indicador de progreso mientras se genera la factura electrónica
+            Swal.fire({
+                title: 'Generando factura electrónica...',
+                html: 'Por favor espera, estamos creando la factura en Alegra y consultando la DIAN.<br><small>Este proceso puede tardar varios segundos.</small>',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
             // Enviar formulario con AJAX
             $.ajax({
                 url: form.attr('action'),
                 method: 'POST',
                 data: form.serialize(),
                 success: function(response) {
+                    // Cerrar indicador de progreso
+                    Swal.close();
+
                     // Procesar respuesta del servidor
 
                     try {
@@ -1160,7 +1174,25 @@
                             response = JSON.parse(response);
                         }
 
-                        // URLs de respuesta procesadas
+                        // Si la factura electrónica se generó correctamente, emitir y abrir directamente
+                        if (response.success && response.fe_success === true) {
+                            const baseUrl = window.location.origin;
+                            const printUrl = response.print_url || `${baseUrl}/ventas/${response.data.id}/print`;
+                            console.log('URL de impresión (FE):', printUrl);
+
+                            const printWindow = window.open(printUrl, '_blank');
+                            if (!printWindow) {
+                                console.error('Bloqueador de popups detectado');
+                                alert('Por favor, permita las ventanas emergentes para imprimir');
+                            }
+
+                            // Preparar nueva venta después de emitir
+                            setTimeout(() => {
+                                window.location.href = response.redirect_url || '{{ route('ventas.create') }}';
+                            }, 500);
+
+                            return;
+                        }
 
                         // Verificar si hubo éxito en la venta pero error en la factura electrónica
                         if (response.success && response.fe_success === false) {
@@ -1184,7 +1216,7 @@
                             return;
                         }
 
-                        // Si todo fue exitoso
+                        // Si todo fue exitoso (venta normal o sin factura electrónica)
                         Swal.fire({
                             icon: 'success',
                             title: 'Venta Realizada',
@@ -1225,6 +1257,9 @@
                     }
                 },
                 error: function(xhr) {
+                    // Cerrar indicador de progreso si ocurre un error
+                    Swal.close();
+
                     console.error('Error completo:', xhr);
                     let errorMessage = 'Hubo un error al procesar la venta';
                     

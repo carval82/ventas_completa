@@ -127,6 +127,7 @@ class EmpresaController extends Controller
             'email',
             'sitio_web',
             'formato_impresion',
+            'usar_formato_electronico',
             'generar_qr_local',
             'regimen_tributario',
             'factura_electronica_habilitada',
@@ -146,8 +147,10 @@ class EmpresaController extends Controller
             'empresa_id' => $empresa->id
         ]);
         
-        // Manejar el checkbox de facturación electrónica
+        // Manejar los checkboxes booleanos
         $data['factura_electronica_habilitada'] = $request->has('factura_electronica_habilitada');
+        $data['usar_formato_electronico'] = $request->has('usar_formato_electronico');
+        $data['generar_qr_local'] = $request->has('generar_qr_local');
         
         // Manejar el logo solo si se ha enviado
         if ($request->hasFile('logo')) {
